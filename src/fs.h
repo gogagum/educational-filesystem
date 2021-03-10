@@ -1,26 +1,25 @@
+#include <stdint.h>
+#include <time.h>
+
 /*
- * Заметка:
- * Пусть блоков для файла доступно 15. Тогда размер файла 15 * 4096 = 61440 байт.
- * Быть может, это временное решение.
- * Адресуется 16-битными адресами. 
- * Максимальный размер файловой системы - 2^16 * 4096 байт = 256мб.
- * Помимо всего прочего, файлов всего не более 2^16 = 65536
- * В начале файла будет список inode, записанных подряд.
- * Всего штщву максимум столько же, сколько и файлов - 2^16.
- * Они будут занимать статический размер - 2^16 * 32 байт = 2^21 байт = 2^11 кбайт = 2мб.
- * В нвчале надо будет указать размер от 0 до 256 мб в килобайтах, который обрежется по размеру блока
- * (округлится вниз).
- * UPD: свободные блоки будем поддерживать след. образом: в самом начале файла будем хранить 2 числа: первый блок,
- * после которого все свободны, и указатель на первый блок, который будет "Освободившимся". 
- * "Освободившиеся" будут составлять стек.
+ * Filesystem info structure. One is expected to be written in the first block of file.
  */
-
-struct inode
+struct data
 {
-    uint16_t[15] blocks;
-    uint8_t type;  
-    uint8_t rights;
-    // TODO
-}
+    uint16_t blocks_cnt;              // Index of first block in the file
+    uint16_t blocks_tail_beginning;   // Index of first block position which is free and after which all nodes are free.
+    uint16_t blocks_stack_beginning;  // Index of first freed block position (that contains a stack info).
+    uint16_t inodes_tail_beginning;   // Index of first inode position which is free and after which all nodes are free.
+    uint16_t inodes_stack_beginning;  // Index of first freed inode position (that contains a stack info).
+};
 
-// TODO: убедиться, что структура "Упакуется", то есть будет занимать аккурат 32 бита.
+/*
+ * Simplyfied inode structure.
+ */
+struct __attribute__((__packed__)) inode
+{
+    uint16_t blocks[27];  // Array of addresses
+    uint8_t type;         // File type flag
+    time_t last_edit;     // Moment of last edidtions
+    uint8_t reserved;
+};
