@@ -27,9 +27,3 @@ parse_path(char* str)
 
     return 0; /*ptr to last added node*/
 }
-
-int 
-main() 
-{
-    return 0;
-}
