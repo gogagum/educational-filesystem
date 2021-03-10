@@ -7,12 +7,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <stdbool.h>
-
-#define INODES_SECTION_SIZE 4096   // 2 megabytes for inodes
-#define BLOCKS_INFO_SECTION_SIZE 1 // 1 KB for free inodes, free blocks 
-                                   // and file size info
-#define BLOCK_SIZE 4               // block has a size of 4 KB
-#define MAX_BLOCKS_CNT 65536       // max number of blocks
+#include "fs.h"
 
 #define ceil_div(a, b) (a - 1) / b + 1
 
