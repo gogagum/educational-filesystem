@@ -1,3 +1,5 @@
+#include "parse_path.h"
+
 struct string_list_node
 {
     char* str;

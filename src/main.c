@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include "fs.h"
+#include "create_fs_file.h"
+#include "parse_path.h"
 
 int 
 main() 
 {
-    printf("%li\n", sizeof(struct inode));
-    printf("%li\n", sizeof(time_t));
     return 0;
 }

@@ -1,15 +1,4 @@
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <stdbool.h>
-
-#define INODES_SECTION_SIZE 4096  // 2 megabytes for inodes
-#define BLOCKS_INFO_SECTION_SIZE 1 // 1 KB for free inodes, free blocks, file size info
-#define BLOCK_SIZE 4  // block has a size of 4 KB
-#define MAX_BLOCKS_CNT 65536  // max number of blocks
-
-#define ceil_div(a, b) (a - 1) / b + 1
-
+#include "create_fs_file.h"
 
 /*
  * Counts file size from number of kilobytes. 
@@ -19,15 +8,50 @@ count_file_size(size_t size /*file size, KB*/)
 {
     size_t blocks_cnt = ceil_div(size, BLOCK_SIZE);
     blocks_cnt = (blocks_cnt == 0) ? 1 : blocks_cnt;
-    return INODES_SECTION_SIZE + BLOCKS_INFO_SECTION_SIZE + blocks_cnt * BLOCK_SIZE;
+    return INODES_SECTION_SIZE + 
+           BLOCKS_INFO_SECTION_SIZE + blocks_cnt * BLOCK_SIZE;
 }
 
 /*
  * Creates file for file filesystem simulator. 
  * If ret_ptr != NULL, return pointer to beginning of mmapped file.
  */
+int
+create_fs_file(char* path, void** ret_ptr)
+{
+    if (ret_ptr == NULL)
+    {   // Nowhere to return.
+        return 1;
+    }
+
+    int fd = open(path, O_RDWR);
+
+    if (fd == -1) 
+    {   // Could not open file.
+        return 2;
+    }
+
+    struct stat st;
+    fstat(fd, &st);
+    
+    void* mmaped_ptr = 
+        mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        
+    if (mmaped_ptr == MAP_FAILED) 
+    {   // Filed at mmap
+        return 4;
+    }
+        
+    *ret_ptr = mmaped_ptr;
+    return 0;
+}
+
+/*
+ * Openes or creates file for file filesystem simulator. 
+ * If ret_ptr != NULL, return pointer to beginning of mmapped file.
+ */
 int 
-create_fs_file(char* path, size_t size, void** ret_ptr, bool rewrite)
+open_fs_file(char* path, size_t size, void** ret_ptr, bool rewrite)
 {
     if (size > MAX_BLOCKS_CNT * BLOCK_SIZE) 
     {   // size is too large
@@ -46,18 +70,19 @@ create_fs_file(char* path, size_t size, void** ret_ptr, bool rewrite)
         return 3;
     }
 
-    if (ret_ptr == NULL)
-    {   // No need to return mmaped file
-        return 0;
+    if (ret_ptr != NULL)
+    {
+        void* mmaped_ptr = 
+            mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        
+        if (mmaped_ptr == MAP_FAILED) 
+        {   // Filed at mmap
+            return 4;
+        }
+        
+        *ret_ptr = mmaped_ptr;
     }
 
-    void* mmaped_ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
-    if (mmaped_ptr == MAP_FAILED) 
-    {   // Filed at mmap
-        return 4;
-    }
-
-    *ret_ptr = mmaped_ptr;
+    close(fd);
     return 0;
 }

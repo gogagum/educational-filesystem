@@ -1,10 +1,13 @@
+#ifndef FS_H
+#define FS_H
+
 #include <stdint.h>
 #include <time.h>
 
 /*
  * Filesystem info structure. One is expected to be written in the first block of file.
  */
-struct data
+struct fs_data
 {
     uint16_t blocks_cnt;              // Index of first block in the file
     uint16_t blocks_tail_beginning;   // Index of first block position which is free and after which all nodes are free.
@@ -23,3 +26,5 @@ struct __attribute__((__packed__)) inode
     time_t last_edit;     // Moment of last edidtions
     uint8_t reserved;
 };
+
+#endif  // FS_H
