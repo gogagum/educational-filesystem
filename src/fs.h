@@ -10,6 +10,15 @@
 #define BLOCK_SIZE 4               // block has a size of 4 KB
 #define MAX_BLOCKS_CNT 65536       // max number of blocks
 
+
+enum FILE_TYPE
+{
+    DIR,
+    REG
+};
+
+
+
 /*
  * Filesystem info structure. One is expected to be written in the first block of file.
  */
@@ -28,10 +37,20 @@ struct fs_data
  */
 struct __attribute__((__packed__)) inode
 {
-    uint16_t blocks[27];  // Array of addresses
-    uint8_t type;         // File type flag
+    uint16_t blocks[26];  // Array of addresses
+    enum FILE_TYPE type;         // File type flag
     time_t last_edit;     // Moment of last edidtions
+    uint16_t size;
     uint8_t reserved;
+};
+
+/*
+ * Info about one directory (which is written inside other directory).
+ */
+struct link
+{
+    uint16_t inode_index;
+    char name[14];
 };
 
 #endif  // FS_H

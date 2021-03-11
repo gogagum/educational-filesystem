@@ -15,7 +15,7 @@
  * Counts file size from number of kilobytes. 
  */
 size_t
-count_file_size(size_t size /*file size, KB*/);
+count_fs_file_size(size_t size /*file size, KB*/);
 
 /*
  * Creates file for file filesystem simulator. 

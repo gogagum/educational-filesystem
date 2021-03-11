@@ -4,7 +4,7 @@
  * Counts file size from number of kilobytes. 
  */
 size_t
-count_file_size(size_t size /*file size, KB*/)
+count_fs_file_size(size_t size /*file size, KB*/)
 {
     size_t blocks_cnt = ceil_div(size, BLOCK_SIZE);
     blocks_cnt = (blocks_cnt == 0) ? 1 : blocks_cnt;

@@ -1,8 +1,22 @@
+#ifndef DIRECTORY_H
+#define DIRECTORY_H
+
+#include <string.h>
+// #include "fs.h"
+#include "data_getters.h"
+
 /*
- * Record about file in direcory
+ * Returns ith internal file/directory
  */
-struct dir_line
-{
-    uint16_t inode_index;  // Inode index of a file (or directory file) inside directory
-    char[14] file_name;    // Name of a file (or directory file) inside directory
-}
+void
+get_ith_internal_file(size_t inode_index,
+                      const struct fs_data* filesys_data, 
+                      const void* mapped_file,
+                      size_t inturnal_index,
+                      struct link* ret_link);
+
+
+
+
+
+#endif
