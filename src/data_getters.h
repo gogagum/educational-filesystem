@@ -18,7 +18,7 @@ get_filesys_data(struct fs_data* filesys_data,
  * Gets inode pointer by index.
  */
 struct inode*
-get_inode_ptr(size_t inode_index,
+get_inode_ptr(inode_idx_t inode_index,
               const struct fs_data* filesys_data,
               void* mapped_file);
 
@@ -26,10 +26,10 @@ get_inode_ptr(size_t inode_index,
  * Gets inode by index.
  */
 void 
-get_inode(size_t inode_index, 
+get_inode(struct inode* ret_inode,
+          size_t inode_index, 
           const struct fs_data* filesys_data, 
-          const void* mapped_file, 
-          struct inode* ret_inode);
+          const void* mapped_file);
 
 /*
  * Returns pointer to the block.
@@ -43,19 +43,19 @@ get_block_ptr(size_t block_index,
  * Gets block by index.
  */
 void 
-get_block(size_t block_index, 
+get_block(void* ret_block,
+          size_t block_index, 
           const struct fs_data* filesys_data, 
-          const void* mapped_file, 
-          void* ret_block);
+          const void* mapped_file);
 
 /*
- * For file with inode index 'inode_index' returns ptr to offset in block
+ * For file with inode reffered by 'inode_ptr' returns ptr to offset in block
  */
-void* 
-get_ptr(size_t inode_index, 
+void*
+get_ptr(const struct inode* inode_ptr,
+        ptrdiff_t offset, 
         const struct fs_data* filesys_data,
-        void* mapped_file,  
-        ptrdiff_t offset);
+        void* mapped_file);
 
 
 #endif  // DATA_GETTERS_H

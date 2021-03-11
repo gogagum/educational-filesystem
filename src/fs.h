@@ -10,14 +10,13 @@
 #define BLOCK_SIZE 4               // block has a size of 4 KB
 #define MAX_BLOCKS_CNT 65536       // max number of blocks
 
+typedef size_t inode_idx_t;
 
 enum FILE_TYPE
 {
     DIR,
     REG
 };
-
-
 
 /*
  * Filesystem info structure. One is expected to be written in the first block of file.

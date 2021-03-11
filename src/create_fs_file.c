@@ -1,8 +1,6 @@
 #include "create_fs_file.h"
 
-/*
- * Counts file size from number of kilobytes. 
- */
+//----------------------------------------------------------------------------//
 size_t
 count_fs_file_size(size_t size /*file size, KB*/)
 {
@@ -12,10 +10,7 @@ count_fs_file_size(size_t size /*file size, KB*/)
            BLOCKS_INFO_SECTION_SIZE + blocks_cnt * BLOCK_SIZE;
 }
 
-/*
- * Creates file for file filesystem simulator. 
- * If ret_ptr != NULL, return pointer to beginning of mmapped file.
- */
+//----------------------------------------------------------------------------//
 int
 create_fs_file(char* path, void** ret_ptr)
 {
@@ -46,10 +41,7 @@ create_fs_file(char* path, void** ret_ptr)
     return 0;
 }
 
-/*
- * Openes or creates file for file filesystem simulator. 
- * If ret_ptr != NULL, return pointer to beginning of mmapped file.
- */
+//----------------------------------------------------------------------------//
 int 
 open_fs_file(char* path, size_t size, void** ret_ptr, bool rewrite)
 {

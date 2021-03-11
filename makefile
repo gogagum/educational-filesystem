@@ -1,12 +1,13 @@
 all:   main 
        
-main:  main.o data_getters.o parse_path.o
+main:  main.o directory.o data_getters.o parse_path.o
 	gcc -o build/main build/main.o \
+	                  build/directory.o \
 	                  build/data_getters.o \
 	                  build/parse_path.o
 
 main.o:
-	gcc -o build/main.ols  src/main.c
+	gcc -o build/main.o -c src/main.c
 
 directory.o: data_getters.o data_setters.o
 	gcc -o build/directory.o -c src/directory.c

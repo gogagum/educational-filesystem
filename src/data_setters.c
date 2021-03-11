@@ -1,17 +1,13 @@
 #include "data_setters.h"
 
-/*
- * Copies filesys_data to the beginning of the file.
- */
+//----------------------------------------------------------------------------//
 void 
 set_filesys_data(const struct fs_data* filesys_data, void* mapped_file)
 {
     memcpy(mapped_file, (void*) filesys_data, sizeof(struct fs_data));
 }
 
-/*
- * Sets inode by index.
- */
+//----------------------------------------------------------------------------//
 void 
 set_inode(size_t i, const struct fs_data* filesys_data, void* mapped_file, 
           const struct inode* inode_to_set)
@@ -21,9 +17,7 @@ set_inode(size_t i, const struct fs_data* filesys_data, void* mapped_file,
            inode_to_set, sizeof(struct inode));
 }
 
-/*
- * Sets block by index.
- */
+//----------------------------------------------------------------------------//
 void 
 set_block(size_t i, const struct fs_data* filesys_data, void* mapped_file, 
           const void* block_to_set)

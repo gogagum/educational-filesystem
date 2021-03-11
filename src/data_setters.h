@@ -2,6 +2,7 @@
 #define DATA_SETTERS_H
 
 #include <string.h>
+#include <assert.h>
 #include "fs.h"
 
 /*
