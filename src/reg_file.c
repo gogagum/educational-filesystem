@@ -29,7 +29,7 @@ set_chunk(void* buff,
           struct inode* inode_ptr,
           size_t write_limit,
           ptrdiff_t curr_offset,
-          const struct fs_data* filesys_dat,
+          const struct fs_data* filesys_data,
           void* mapped_file)
 {
     void* inblock_ptr = get_ptr(inode_ptr, 
@@ -41,4 +41,23 @@ set_chunk(void* buff,
     size_t to_write = 
         (to_the_end_of_block < write_limit) ? to_the_end_of_block : write_limit;
     memcpy(inblock_ptr, buff, to_write);
+}
+
+//----------------------------------------------------------------------------//
+void
+grow_file(size_t bytes_to_add,
+          struct inode* inode_ptr,
+          struct fs_data* filesys_data,
+          void* mapped_file)
+{
+    size_t curr_file_size = (*inode_ptr).size;
+    size_t curr_blocks_cnt = ceil_div(curr_file_size, BLOCK_SIZE * 1024);
+    size_t blocks_to_add = 
+           ceil_div(curr_file_size + bytes_to_add, BLOCK_SIZE * 1024) - (*inode_ptr).blocks_cnt;
+    for (size_t i = (*inode_ptr).blocks_cnt; 
+         i < (*inode_ptr).blocks_cnt + blocks_to_add; i++)
+    {
+        (*inode_ptr).blocks[i] = idx_alloc_blk(filesys_data, mapped_file);
+    }
+    (*inode_ptr).size += bytes_to_add;
 }

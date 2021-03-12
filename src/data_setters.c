@@ -2,14 +2,17 @@
 
 //----------------------------------------------------------------------------//
 void 
-set_filesys_data(const struct fs_data* filesys_data, void* mapped_file)
+set_filesys_data(const struct fs_data* filesys_data, 
+                 void* mapped_file)
 {
     memcpy(mapped_file, (void*) filesys_data, sizeof(struct fs_data));
 }
 
 //----------------------------------------------------------------------------//
 void 
-set_inode(size_t i, const struct fs_data* filesys_data, void* mapped_file, 
+set_inode(size_t i, 
+          const struct fs_data* filesys_data, 
+          void* mapped_file, 
           const struct inode* inode_to_set)
 {
     assert(i <= (*filesys_data).inodes_cnt);
@@ -19,7 +22,9 @@ set_inode(size_t i, const struct fs_data* filesys_data, void* mapped_file,
 
 //----------------------------------------------------------------------------//
 void 
-set_block(size_t i, const struct fs_data* filesys_data, void* mapped_file, 
+set_block(size_t i, 
+          const struct fs_data* filesys_data, 
+          void* mapped_file, 
           const void* block_to_set)
 {
     assert(i <= (*filesys_data).blocks_cnt);

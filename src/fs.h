@@ -36,11 +36,12 @@ struct fs_data
  */
 struct __attribute__((__packed__)) inode
 {
-    uint16_t blocks[26];  // Array of addresses
-    enum FILE_TYPE type;         // File type flag
+    uint16_t blocks[25];  // Array of addresses
+    enum FILE_TYPE type;  // File type flag
     time_t last_edit;     // Moment of last edidtions
-    uint16_t size;
-    uint8_t reserved;
+    uint16_t size;        // Size of the file
+    uint16_t blocks_cnt;  // Number of blocks
+    uint8_t reserved;     // Don't know how to use 1 byte
 };
 
 /*

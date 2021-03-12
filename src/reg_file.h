@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include "alloc.h"
 #include "data_getters.h"
 
 /*
@@ -27,6 +28,16 @@ set_chunk(void* buff,
           ptrdiff_t curr_offset,
           const struct fs_data* filesys_dat,
           void* mapped_file);
+
+/*
+ * Make file bigger.
+ */
+void
+grow_file(size_t bytes_to_add,
+          struct inode* inode_ptr,
+          struct fs_data* filesys_data,
+          void* mapped_file);
+
 
 
 

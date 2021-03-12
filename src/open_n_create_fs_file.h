@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 #include "fs.h"
+#include "data_setters.h"
 
 #define ceil_div(a, b) (a - 1) / b + 1
 
@@ -21,14 +22,18 @@ count_fs_file_size(size_t size /*file size, KB*/);
  * Creates file for file filesystem simulator. 
  * If ret_ptr != NULL, return pointer to beginning of mmapped file.
  */
-int
-create_fs_file(char* path, void** ret_ptr);
+void*
+create_fs_file(int* ret_fd,
+               char* path,
+               size_t inodes_cnt,
+               size_t blocks_cnt);
 
 /*
  * Openes or creates file for file filesystem simulator. 
  * If ret_ptr != NULL, return pointer to beginning of mmapped file.
  */
-int 
-open_fs_file(char* path, size_t size, void** ret_ptr, bool rewrite);
+void* 
+open_fs_file(int* ret_fd, 
+             char* path);
 
 #endif // CREATE_FS_FILE_H
