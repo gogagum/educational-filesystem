@@ -17,4 +17,17 @@ get_chunk(void* buff,
           const struct fs_data* filesys_data,
           void* mapped_file);
 
+/*
+ * Write into file from buffer.
+ */
+size_t
+set_chunk(void* buff,
+          struct inode* inode_ptr,
+          size_t write_limit,
+          ptrdiff_t curr_offset,
+          const struct fs_data* filesys_dat,
+          void* mapped_file);
+
+
+
 #endif  // REG_FILE_H
