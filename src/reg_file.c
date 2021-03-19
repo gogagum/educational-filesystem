@@ -15,8 +15,8 @@ get_chunk(void* buff,
                                 curr_offset, 
                                 filesys_data, 
                                 mapped_file);
-    size_t blk_idx = ceil_div(curr_offset, BLOCK_SIZE * 1024);
-    size_t to_the_end_of_block = blk_idx * BLOCK_SIZE * 1024 - curr_offset;
+    size_t blk_idx = ceil_div(curr_offset, BYTES_BLOCK_SIZE);
+    size_t to_the_end_of_block = blk_idx * BYTES_BLOCK_SIZE - curr_offset;
     size_t to_read = 
         (to_the_end_of_block < read_limit) ? to_the_end_of_block : read_limit;
     memcpy(buff, inblock_ptr, to_read);
@@ -36,8 +36,8 @@ set_chunk(void* buff,
                                 curr_offset, 
                                 filesys_data, 
                                 mapped_file);
-    size_t blk_idx = ceil_div(curr_offset, BLOCK_SIZE * 1024);
-    size_t to_the_end_of_block = blk_idx * BLOCK_SIZE * 1024 - curr_offset;
+    size_t blk_idx = ceil_div(curr_offset, BYTES_BLOCK_SIZE);
+    size_t to_the_end_of_block = blk_idx * BYTES_BLOCK_SIZE - curr_offset;
     size_t to_write = 
         (to_the_end_of_block < write_limit) ? to_the_end_of_block : write_limit;
     memcpy(inblock_ptr, buff, to_write);
@@ -51,13 +51,33 @@ grow_file(size_t bytes_to_add,
           void* mapped_file)
 {
     size_t curr_file_size = (*inode_ptr).size;
-    size_t curr_blocks_cnt = ceil_div(curr_file_size, BLOCK_SIZE * 1024);
+    size_t curr_blocks_cnt = (*inode_ptr).blocks_cnt;
     size_t blocks_to_add = 
-           ceil_div(curr_file_size + bytes_to_add, BLOCK_SIZE * 1024) - (*inode_ptr).blocks_cnt;
-    for (size_t i = (*inode_ptr).blocks_cnt; 
-         i < (*inode_ptr).blocks_cnt + blocks_to_add; i++)
+        ceil_div(curr_file_size + bytes_to_add, BYTES_BLOCK_SIZE) - 
+        curr_blocks_cnt;
+    for (size_t i = 0; i < blocks_to_add; i++)
     {
-        (*inode_ptr).blocks[i] = idx_alloc_blk(filesys_data, mapped_file);
+        (*inode_ptr).blocks[curr_blocks_cnt + i] = 
+        idx_alloc_blk(filesys_data, mapped_file);
     }
     (*inode_ptr).size += bytes_to_add;
+    (*inode_ptr).blocks_cnt += blocks_to_add;
+}
+
+//----------------------------------------------------------------------------//
+void
+delete_file(size_t inode_idx, 
+            struct fs_data* filesys_data,
+            void *mapped_file)
+{
+    struct inode* inode_ptr = get_inode_ptr(inode_idx, 
+                                            filesys_data, 
+                                            mapped_file);
+    assert((*inode_ptr).type == REG);
+    for (size_t i = 0; i < (*inode_ptr).blocks_cnt; ++i)
+    {
+        size_t block_idx = (*inode_ptr).blocks[i];
+        free_blk(block_idx, filesys_data, mapped_file);
+    }
+    free_inode(inode_idx, filesys_data, mapped_file);
 }

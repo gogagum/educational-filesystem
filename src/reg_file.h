@@ -30,7 +30,7 @@ set_chunk(void* buff,
           void* mapped_file);
 
 /*
- * Make file bigger.
+ * Make file bigger. 'inode_ptr' mast be a pointer to an inode in mapped file. 
  */
 void
 grow_file(size_t bytes_to_add,
@@ -38,7 +38,12 @@ grow_file(size_t bytes_to_add,
           struct fs_data* filesys_data,
           void* mapped_file);
 
-
-
+/*
+ * Deletes file by inode index.
+ */
+void 
+delete_file(size_t inode_idx,
+            struct fs_data* filesys_data,
+            void* mapped_file);
 
 #endif  // REG_FILE_H

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <error.h>
 #include "menus.h"
 #include "fs.h"
 #include "open_n_create_fs_file.h"
@@ -8,12 +9,12 @@
 int 
 main() 
 {
-    enum STARTUP_MENU_RESULT res = ERROR;
+    enum STARTUP_MENU_RESULT res = STARTUP_MENU_ERROR;
 
-    while (res == ERROR)
+    while (res == STARTUP_MENU_ERROR)
     {
         res = startup_menu();
-        if (res == ERROR)
+        if (res == STARTUP_MENU_ERROR)
         {
             printf("%s\n", "Unsupported answer.");
         }
@@ -26,7 +27,7 @@ main()
     switch (res)
     {
     case CREATE:
-        mapped_file = create_menu(&filesys_data);
+        mapped_file = create_menu(&fd, &filesys_data);
         break;
     case OPEN:
         mapped_file = open_menu(&fd, &filesys_data);
@@ -34,8 +35,17 @@ main()
     }
 
     if (mapped_file == NULL) {
+        error(0, 0, "%s", "Could not map file.");
         return 1;
     }
-    //loop(&filesys_data, mapped_file);
+    
+    loop(fd, &filesys_data, mapped_file);
+
+    munmap(mapped_file, 
+           sizeof(struct fs_data) + 
+           filesys_data.blocks_cnt * BLOCK_SIZE * 1024 + 
+           filesys_data.inodes_cnt * sizeof(struct inode));
+    close(fd);
+
     return 0;
 }

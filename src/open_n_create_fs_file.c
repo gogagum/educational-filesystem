@@ -17,11 +17,11 @@ create_fs_file(int* ret_fd,
                size_t inodes_cnt,
                size_t blocks_cnt)
 {
-    int fd = open(path, O_RDWR);
+    int fd = open(path, O_RDWR | O_CREAT);
 
     if (fd == -1) 
-    {   // Could not open file.
-        return NULL;
+    {
+        error(0, 0, "%s", "Can not open file.");
     }
 
     size_t file_size = sizeof(struct fs_data) + 
@@ -57,7 +57,7 @@ void*
 open_fs_file(int* ret_fd,
              char* path)
 {
-    int fd = open(path, O_RDWR | O_CREAT);
+    int fd = open(path, O_RDWR);
 
     if (fd == -1) 
     {   // Failed while opening

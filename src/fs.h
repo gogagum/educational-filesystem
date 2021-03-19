@@ -8,6 +8,7 @@
 #define BLOCKS_INFO_SECTION_SIZE 1 // 1 KB for free inodes, free blocks 
                                    // and file size info
 #define BLOCK_SIZE 4               // block has a size of 4 KB
+#define BYTES_BLOCK_SIZE 4096      // block size in bytes
 #define MAX_BLOCKS_CNT 65536       // max number of blocks
 
 typedef size_t inode_idx_t;
@@ -45,12 +46,21 @@ struct __attribute__((__packed__)) inode
 };
 
 /*
+ * Directory file info written in the beginning of a directory file.
+ */
+struct dir_data 
+{
+    size_t parent_inode_idx;    // Parent inode Index
+    size_t internal_files_cnt;  // Number of files inside
+};
+
+/*
  * Info about one directory (which is written inside other directory).
  */
 struct link
 {
-    uint16_t inode_index;
-    char name[14];
+    size_t inode_idx;  // Index of an internal file inode
+    char name[24];     // Name of an internal file
 };
 
 #endif  // FS_H
