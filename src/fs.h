@@ -46,15 +46,6 @@ struct __attribute__((__packed__)) inode
 };
 
 /*
- * Directory file info written in the beginning of a directory file.
- */
-struct dir_data 
-{
-    size_t parent_inode_idx;    // Parent inode Index
-    size_t internal_files_cnt;  // Number of files inside
-};
-
-/*
  * Info about one directory (which is written inside other directory).
  */
 struct link

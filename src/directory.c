@@ -1,5 +1,9 @@
 #include "directory.h"
 
+const char* UP_DIR = "..\0";
+const char* CURR_DIR = ".\0";
+
+
 //----------------------------------------------------------------------------//
 struct link*
 get_ith_internal_file_link_ptr(struct inode* dir_inode_ptr,
@@ -101,10 +105,10 @@ find_inode_ptr_by_name(char* path_tail,
 
 //----------------------------------------------------------------------------//
 size_t
-find_inode_idx_by_name(char* path_tail,
-                        struct inode* dir_inode_ptr,
-                        const struct fs_data* filesys_data,
-                        const void* mapped_file)
+find_inode_idx_by_name(const char* path_tail,
+                       struct inode* dir_inode_ptr,
+                       const struct fs_data* filesys_data,
+                       const void* mapped_file)
 {
     char c = '/';
     char* end_of_path_step = strstr(path_tail, &c);
@@ -127,10 +131,105 @@ find_inode_idx_by_name(char* path_tail,
 } 
 
 //----------------------------------------------------------------------------//
-struct dir_data* 
-get_dir_data_ptr(struct inode* dir_inode_ptr,
-                 const struct fs_data* filesys_data,
-                 void* mapped_file)
+struct link*
+find_link_ptr_by_inode_idx(size_t inode_idx,
+                           struct inode* dir_inode_ptr,
+                           const struct fs_data* filesys_data,
+                           const void* mapped_file)
 {
-   return (struct dir_data*)get_ptr(dir_inode_ptr, 0, filesys_data, mapped_file); 
+    size_t links_cnt = get_dir_links_cnt(dir_inode_ptr, 
+                                         filesys_data, 
+                                         mapped_file);
+    struct link* ret_link_ptr = NULL;
+
+    for (size_t i = 0; i < links_cnt; i++)
+    {
+        ret_link_ptr = get_ith_internal_file_link_ptr(dir_inode_ptr, 
+                                                      i, 
+                                                      filesys_data, 
+                                                      mapped_file);
+        if ((*ret_link_ptr).inode_idx == inode_idx)
+        {
+            return ret_link_ptr;
+        }
+    }
+}
+
+//----------------------------------------------------------------------------//
+size_t  
+get_dir_links_cnt(struct inode* dir_inode_ptr,
+                  const struct fs_data* filesys_data,
+                  const void* mapped_file)
+{
+   return *(size_t*)get_ptr(dir_inode_ptr, 0, filesys_data, (void*)mapped_file); 
+}
+
+//----------------------------------------------------------------------------//
+void
+set_dir_links_cnt(size_t links_cnt,
+                  struct inode* dir_inode_ptr,
+                  const struct fs_data* filesys_data,
+                  const void* mapped_file)
+{
+    size_t* cnt_ptr = 
+        get_ptr(dir_inode_ptr, 0, filesys_data, (void*)mapped_file);
+    *cnt_ptr = links_cnt;
+}
+
+//----------------------------------------------------------------------------//
+void
+remove_inode(struct inode* dir_inode_ptr,
+             struct fs_data* filesys_data,
+             void* mapped_file)
+{
+    if ((*dir_inode_ptr).type == DIR)
+    {
+        size_t links_cnt = get_dir_links_cnt(dir_inode_ptr, 
+                                             filesys_data, 
+                                             mapped_file);
+        for (size_t i = 0; i < links_cnt; ++i)
+        {
+            struct link* curr_link = 
+                get_ith_internal_file_link_ptr(dir_inode_ptr, 
+                                               i, 
+                                               filesys_data, 
+                                               mapped_file);
+            if (!strcmp((*curr_link).name, UP_DIR) && 
+                !strcmp((*curr_link).name, CURR_DIR))
+            {
+                struct inode* internal_file_inode_ptr = 
+                    get_inode_ptr((*curr_link).inode_idx, 
+                                  filesys_data, 
+                                  mapped_file);
+                remove_inode(internal_file_inode_ptr, filesys_data, mapped_file);
+            }
+        }
+    }
+    for (size_t i = 0; i < (*dir_inode_ptr).blocks_cnt; ++i)
+    {
+        free_blk((*dir_inode_ptr).blocks[i], filesys_data, mapped_file);
+    }
+}
+
+//----------------------------------------------------------------------------//
+size_t
+get_parent_directory_inode_idx(struct inode* dir_inode_ptr,
+                               struct fs_data* filesys_data,
+                               void* mapped_file)
+{
+    return find_inode_idx_by_name(UP_DIR,
+                                  dir_inode_ptr, 
+                                  filesys_data, 
+                                  mapped_file);
+}
+
+//----------------------------------------------------------------------------//
+struct inode*
+get_parent_directory_inode_ptr(struct inode* dir_inode_ptr, 
+                               struct fs_data* filesys_data,
+                               void* mapped_file)
+{
+    inode_idx_t parent_directory_inode_idx =
+        get_parent_directory_inode_idx(dir_inode_ptr, filesys_data, mapped_file);
+    return get_inode_ptr(parent_directory_inode_idx, filesys_data, mapped_file);
 }

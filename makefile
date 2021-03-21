@@ -20,7 +20,7 @@ main:  main.o directory.o \
 main.o:
 	gcc -o build/main.o -c src/main.c
 
-menus.o:
+menus.o: directory.o
 	gcc -o build/menus.o -c src/menus.c
 
 directory.o: data_getters.o data_setters.o

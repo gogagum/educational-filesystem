@@ -5,6 +5,7 @@
 #include "open_n_create_fs_file.h"
 #include "directory.h"
 #include "reg_file.h"
+#include "fs.h"
 
 enum STARTUP_MENU_RESULT
 {
@@ -30,6 +31,13 @@ enum OPERATION_MENU_RESULT
  */
 enum STARTUP_MENU_RESULT
 startup_menu();
+
+/* 
+ * Gets path from user
+ */
+ssize_t
+get_path_from_user(char** ret_path, 
+                   size_t* n);
 
 /*
  * Gets from user file name to open file.

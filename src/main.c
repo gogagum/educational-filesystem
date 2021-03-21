@@ -43,7 +43,7 @@ main()
 
     munmap(mapped_file, 
            sizeof(struct fs_data) + 
-           filesys_data.blocks_cnt * BLOCK_SIZE * 1024 + 
+           filesys_data.blocks_cnt * BYTES_BLOCK_SIZE + 
            filesys_data.inodes_cnt * sizeof(struct inode));
     close(fd);
 

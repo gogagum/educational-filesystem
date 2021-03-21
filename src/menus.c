@@ -15,6 +15,7 @@ startup_menu()
         printf("%s\n", "###################################################");
 
         int input_res = scanf("%c", &c);
+        getchar();
 
         if (c != '1' && c != '2') 
         {
@@ -38,18 +39,17 @@ void*
 open_menu(int* ret_fd,
           struct fs_data* filesys_data)
 {
-    printf("%s\n", "Print filename (full path, or relative)");
-
-    char* filename;
+    char* filename = NULL;
     size_t n = 0;
 
-    if (getline(&filename, &n, stdin) != -1)
+    if (get_path_from_user(&filename, &n) != -1)
     {
         void* mapper_file = open_fs_file(ret_fd, filename);
         free(filename);
         return open_fs_file(ret_fd, filename);
     }
 
+    free(filename);
     return NULL;
 }
 
@@ -58,24 +58,25 @@ void*
 create_menu(int* ret_fd,
             struct fs_data* filesys_data)
 {
-    printf("%s\n", "Print filename (full path, or relative)");
-    
-    char* filename;
+    char* filename = NULL;
     size_t n = 0;
 
-    if (getline(&filename, &n, stdin) != -1)
+    if (get_path_from_user(&filename, &n) != -1)
     {
         size_t inodes_cnt;
         printf("%s\n", "Choose inodes count.");
         scanf("%lx", &inodes_cnt);
+        getchar();
 
         size_t blocks_cnt;
         printf("%s\n", "Choose blocks count.");
         scanf("%lx", &blocks_cnt);
+        getchar();
 
         return create_fs_file(ret_fd, filename, inodes_cnt, blocks_cnt);
     }
 
+    free(filename);
     return NULL;
 }
 
@@ -96,9 +97,16 @@ loop(int fd,
         switch(curr_cmd) 
         {
             case READ:
+                read_cmd(filesys_data, mapped_file);
+                break;
             case WRITE:
+                write_cmd(filesys_data, mapped_file);
+                break;
             case LS:
+                ls_cmd(filesys_data, mapped_file);
+                break;
             case RM:
+                rm_cmd(filesys_data, mapped_file);
             case EXIT: return;
         }
     }
@@ -120,6 +128,7 @@ command_choosing_menu()
 
     char c;
     int input_res = scanf("%c", &c);
+    getchar();
 
     if (input_res != 1)
     {
@@ -145,7 +154,8 @@ command_choosing_menu()
 
 //----------------------------------------------------------------------------//
 ssize_t
-get_path_from_user(char** ret_path, size_t* n)
+get_path_from_user(char** ret_path, 
+                   size_t* n)
 {
     do {
         printf("%s\n", "Print file location.");
@@ -165,7 +175,7 @@ read_cmd(struct fs_data* filesys_data,
 {
     char* filename;
     size_t n;
-    ssize_t input_res = get_path_from_user(&filename, &n);
+    get_path_from_user(&filename, &n);
 
     struct inode* inode_ptr = 
         find_inode_ptr_by_name(filename + 1, 
@@ -196,7 +206,7 @@ write_cmd(struct fs_data* filesys_data,
 {
     char* filename;
     size_t n;
-    ssize_t input_res = get_path_from_user(&filename, &n);
+    get_path_from_user(&filename, &n);
 
     struct inode* inode_ptr =  
         find_inode_ptr_by_name(filename, 
@@ -205,7 +215,7 @@ write_cmd(struct fs_data* filesys_data,
                                mapped_file);
     char* str_to_write;
     printf("%s\n", "Print a string to append into file.");
-    input_res = getline(&str_to_write, &n, stdin);
+    getline(&str_to_write, &n, stdin);
 
     size_t chars_to_write = n;
 
@@ -235,9 +245,8 @@ ls_cmd(struct fs_data* filesys_data,
 {
     char* path;
     size_t path_length;
-    printf("%s\n", "Print directory path.");
-    getline(&path, &path_length, stdin);
-
+    get_path_from_user(&path, &path_length);
+    
     size_t inode_idx = find_inode_idx_by_name(path, 
                                               get_root_inode_ptr(filesys_data, 
                                                                  mapped_file), 
@@ -250,13 +259,15 @@ ls_cmd(struct fs_data* filesys_data,
     assert((*inode_ptr).type == DIR);
 
     struct link ith_internal_file_link;
-    struct dir_data* curr_dir_data = get_dir_data_ptr(inode_ptr, 
-                                                      filesys_data, 
-                                                      mapped_file);
+    size_t links_cnt = get_dir_links_cnt(inode_ptr, filesys_data, mapped_file);
 
-    for (size_t i = 0; i < (*curr_dir_data).internal_files_cnt; ++i)
+    for (size_t i = 0; i < links_cnt; ++i)
     {
-        get_ith_internal_file_link(&ith_internal_file_link, inode_ptr, i, filesys_data, mapped_file);
+        get_ith_internal_file_link(&ith_internal_file_link, 
+                                   inode_ptr, 
+                                   i, 
+                                   filesys_data, 
+                                   mapped_file);
         printf("%s\n", ith_internal_file_link.name);
     }
 }
@@ -265,7 +276,50 @@ ls_cmd(struct fs_data* filesys_data,
 void
 rm_cmd(
     struct fs_data* filesys_data,
-       void* mapped_file)
+    void* mapped_file)
 {
+    char* path;
+    size_t path_length;
+    get_path_from_user(&path, &path_length);
 
+    size_t inode_idx = find_inode_idx_by_name(path, 
+                                              get_root_inode_ptr(filesys_data, 
+                                                                 mapped_file), 
+                                              filesys_data, 
+                                              mapped_file);
+
+    struct inode* inode_ptr = get_inode_ptr(inode_idx, 
+                                            filesys_data, 
+                                            mapped_file);
+    
+    struct inode* parent_inode_ptr = 
+        get_parent_directory_inode_ptr(inode_ptr, filesys_data, mapped_file);
+
+    size_t parent_dir_links_cnt = get_dir_links_cnt(parent_inode_ptr, 
+                                                    filesys_data, 
+                                                    mapped_file);
+
+    struct link* list_end_ptr = 
+        get_ith_internal_file_link_ptr(inode_ptr, 
+                                       parent_dir_links_cnt, 
+                                       filesys_data, 
+                                       mapped_file);
+    
+
+    struct link* link_to_delete = find_link_ptr_by_inode_idx(inode_idx, 
+                                                             parent_inode_ptr, 
+                                                             filesys_data, 
+                                                             mapped_file);    
+
+    if (link_to_delete != list_end_ptr)
+    {
+        memcpy(link_to_delete, list_end_ptr, sizeof(struct link));
+    }
+
+    set_dir_links_cnt(parent_dir_links_cnt - 1, 
+                      parent_inode_ptr,
+                      filesys_data, 
+                      mapped_file);
+
+    remove_inode(inode_ptr, filesys_data, mapped_file);
 }

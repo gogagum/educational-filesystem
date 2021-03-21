@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include "fs.h"
 #include "alloc.h"
 #include "data_getters.h"
 
