@@ -18,6 +18,7 @@ enum OPERATION_MENU_RESULT
 {
     READ,
     WRITE,
+    MKDIR, 
     LS,
     RM,
     EXIT,
@@ -83,6 +84,13 @@ read_cmd(struct fs_data* filesys_data,
 void 
 write_cmd(struct fs_data* filesys_data,
           void* mapped_file);
+
+/*
+ * Gets filename and string from user and creates file.
+ */
+void
+makedir_cmd(struct fs_data* filesys_data, 
+            void* mapped_file);
 
 /*
  * Gets dir name from user and prints ls.

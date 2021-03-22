@@ -83,7 +83,15 @@ set_dir_links_cnt(size_t links_cnt,
                   const struct fs_data* filesys_data,
                   const void* mapped_file);
 
-
+/*
+ *  Creates directory inode with standart links.
+ *  Giving parent_inode_idx == 0 will work for root inode creation.
+ */
+void
+create_dir_inode(inode_idx_t parent_inode_idx,
+                 char* filename,
+                 struct fs_data* filesys_data,
+                 void* mapped_file);
 
 /*
  * Removes directory and all internal directories.
@@ -108,5 +116,15 @@ struct inode*
 get_parent_directory_inode_ptr(struct inode* dir_inode_ptr, 
                                struct fs_data* filesys_data,
                                void* mapped_file);
+
+/*
+ * Sets link to index.
+ */
+void
+set_link(size_t link_idx,
+         struct link* link,
+         struct inode* dir_inode_ptr,
+         struct fs_data* filesys_data,
+         void* mapped_file);
 
 #endif

@@ -14,7 +14,7 @@ get_inode_ptr(size_t inode_idx,
               const struct fs_data* filesys_data,
               void* mapped_file)
 {
-    assert(inode_idx <= (*filesys_data).inodes_cnt);
+    assert(inode_idx <= filesys_data->inodes_cnt);
     return mapped_file + sizeof(struct fs_data) 
                        + inode_idx * sizeof(struct inode);
 }
@@ -37,9 +37,9 @@ get_block_ptr(size_t block_idx,
               const struct fs_data* filesys_data,
               void* mapped_file)
 {
-    assert(block_idx <= (*filesys_data).blocks_cnt);
+    assert(block_idx <= filesys_data->blocks_cnt);
     return mapped_file + BLOCKS_INFO_SECTION_SIZE * BLOCK_SIZE * 1024 + 
-           (*filesys_data).inodes_cnt * sizeof(struct inode);
+           filesys_data->inodes_cnt * sizeof(struct inode);
 }
 
 
@@ -62,7 +62,7 @@ get_ptr(const struct inode* inode_ptr,
         const struct fs_data* filesys_data,
         void* mapped_file)
 {
-    assert(offset >= (*inode_ptr).size);
+    assert(offset >= inode_ptr->size);
     size_t inturnal_block_idx = offset / BYTES_BLOCK_SIZE;
     size_t inblock_offset = offset % BYTES_BLOCK_SIZE;
     return get_block_ptr(inturnal_block_idx, filesys_data, mapped_file) + 

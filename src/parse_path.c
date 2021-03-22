@@ -4,8 +4,8 @@ struct string_list_node*
 add_string_to_list(struct string_list_node* head, char* str)
 {
     struct string_list_node* new_head = malloc(sizeof(struct string_list_node));
-    (*new_head).prev = head;
-    (*new_head).str = strdup(str);
+    new_head->prev = head;
+    new_head->str = strdup(str);
     return new_head;
 }
 

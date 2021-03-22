@@ -102,6 +102,9 @@ loop(int fd,
             case WRITE:
                 write_cmd(filesys_data, mapped_file);
                 break;
+            case MKDIR:
+                makedir_cmd(filesys_data, mapped_file);
+                break;
             case LS:
                 ls_cmd(filesys_data, mapped_file);
                 break;
@@ -121,9 +124,10 @@ command_choosing_menu()
     printf("%s\n", "###################################################");
     printf("%s\n", "# 1. READ.                                        #");
     printf("%s\n", "# 2. WRITE.                                       #");
-    printf("%s\n", "# 3. LS.                                          #");
-    printf("%s\n", "# 4. RM.                                          #");
-    printf("%s\n", "# 5. EXIT.                                        #");
+    printf("%s\n", "# 3. MKDIR.                                       #");
+    printf("%s\n", "# 4. LS.                                          #");
+    printf("%s\n", "# 5. RM.                                          #");
+    printf("%s\n", "# 6. EXIT.                                        #");
     printf("%s\n", "###################################################");
 
     char c;
@@ -142,10 +146,12 @@ command_choosing_menu()
         case '2':
             return WRITE;
         case '3':
-            return LS;
+            return MKDIR;
         case '4':
-            return RM;
+            return LS;
         case '5':
+            return RM;
+        case '6':
             return EXIT;
     }
 
@@ -219,7 +225,7 @@ write_cmd(struct fs_data* filesys_data,
 
     size_t chars_to_write = n;
 
-    size_t curr_offset = (*inode_ptr).size;
+    size_t curr_offset = inode_ptr->size;
     grow_file(chars_to_write, inode_ptr, filesys_data, mapped_file);
 
     size_t last_written;
@@ -240,6 +246,27 @@ write_cmd(struct fs_data* filesys_data,
 
 //----------------------------------------------------------------------------//
 void
+makedir_cmd(struct fs_data* filesys_data, 
+            void* mapped_file)
+{
+    char* creation_path;
+    size_t path_length;
+    get_path_from_user(&creation_path, &path_length);
+
+    char* filename;
+    size_t file_name_length;
+    getline(&filename, &file_name_length, stdin);
+
+    struct inode* root_inode_ptr = get_inode_ptr(0, filesys_data, mapped_file);
+    inode_idx_t to_create_inode_idx = find_inode_idx_by_name(creation_path, 
+                                                             root_inode_ptr, 
+                                                             filesys_data, 
+                                                             mapped_file);
+    create_dir_inode(to_create_inode_idx, filename, filesys_data, mapped_file);
+}
+
+//----------------------------------------------------------------------------//
+void
 ls_cmd(struct fs_data* filesys_data,
        void* mapped_file)
 {
@@ -256,7 +283,7 @@ ls_cmd(struct fs_data* filesys_data,
     struct inode* inode_ptr = get_inode_ptr(inode_idx, 
                                             filesys_data, 
                                             mapped_file);
-    assert((*inode_ptr).type == DIR);
+    assert(inode_ptr->type == DIR);
 
     struct link ith_internal_file_link;
     size_t links_cnt = get_dir_links_cnt(inode_ptr, filesys_data, mapped_file);
@@ -282,11 +309,11 @@ rm_cmd(
     size_t path_length;
     get_path_from_user(&path, &path_length);
 
-    size_t inode_idx = find_inode_idx_by_name(path, 
-                                              get_root_inode_ptr(filesys_data, 
-                                                                 mapped_file), 
-                                              filesys_data, 
-                                              mapped_file);
+    size_t inode_idx = 
+        find_inode_idx_by_name(path, 
+                               get_root_inode_ptr(filesys_data, mapped_file), 
+                               filesys_data, 
+                               mapped_file);
 
     struct inode* inode_ptr = get_inode_ptr(inode_idx, 
                                             filesys_data, 

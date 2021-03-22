@@ -43,3 +43,4 @@ data_setters.o:
 
 parse_path.o:
 	gcc -o build/parse_path.o -c src/parse_path.c
+	
