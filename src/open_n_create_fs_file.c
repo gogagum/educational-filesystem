@@ -1,14 +1,5 @@
 #include "open_n_create_fs_file.h"
 
-//----------------------------------------------------------------------------//
-size_t
-count_fs_file_size(size_t size /*file size, KB*/)
-{
-    size_t blocks_cnt = ceil_div(size, BLOCK_SIZE);
-    blocks_cnt = (blocks_cnt == 0) ? 1 : blocks_cnt;
-    return INODES_SECTION_SIZE + 
-           BLOCKS_INFO_SECTION_SIZE + blocks_cnt * BLOCK_SIZE;
-}
 
 //----------------------------------------------------------------------------//
 void*
@@ -17,6 +8,13 @@ create_fs_file(int* ret_fd,
                size_t inodes_cnt,
                size_t blocks_cnt)
 {
+#ifdef DEBUG
+    printf("create_fs_file(%p, %p, %li, %li)\n", 
+           ret_fd, 
+           path, 
+           inodes_cnt, 
+           blocks_cnt);
+#endif
     int fd = open(path, O_RDWR | O_CREAT);
 
     if (fd == -1) 
@@ -24,13 +22,13 @@ create_fs_file(int* ret_fd,
         error(0, 0, "%s", "Can not open file.");
     }
 
-    size_t file_size = sizeof(struct fs_data) + 
+    size_t file_size = BLOCKS_INFO_SECTION_SIZE * BYTES_BLOCK_SIZE + 
                        inodes_cnt * sizeof(struct inode) + 
-                       blocks_cnt * sizeof(BLOCK_SIZE * 1024);
+                       blocks_cnt * BYTES_BLOCK_SIZE;
     
     ftruncate(fd, file_size);
 
-    void* maped_ptr = 
+    void* mapped_file = 
         mmap(NULL, file_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         
     struct fs_data filesys_data = {.blocks_cnt = blocks_cnt,
@@ -40,14 +38,16 @@ create_fs_file(int* ret_fd,
                                    .inodes_stack_beginning = inodes_cnt,
                                    .inodes_tail_beginning = 0};
 
-    set_filesys_data(&filesys_data, maped_ptr);
-
-    if (maped_ptr != MAP_FAILED) 
-    {   // Filed at mmap
+    
+    if (mapped_file != MAP_FAILED) 
+    {   
+        set_filesys_data(&filesys_data, mapped_file);
         *ret_fd = fd;
-        return maped_ptr;
+        return mapped_file;
     }
-        
+
+    // Failed at mmap
+
     close(fd);
     return NULL;
 }

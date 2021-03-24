@@ -5,6 +5,10 @@
 #include <assert.h>
 #include "fs.h"
 
+#ifdef DEBUG
+#include <stdio.h>
+#endif
+
 /*
  * Copies filesys_data to the beginning of the file.
  */

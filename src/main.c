@@ -3,22 +3,20 @@
 #include "menus.h"
 #include "fs.h"
 #include "open_n_create_fs_file.h"
-#include "parse_path.h"
 
 
 int 
 main() 
 {
-    enum STARTUP_MENU_RESULT res = STARTUP_MENU_ERROR;
+#ifdef DEBUG
+    printf("%s\n", "DEBUG indicator");
 
-    while (res == STARTUP_MENU_ERROR)
-    {
-        res = startup_menu();
-        if (res == STARTUP_MENU_ERROR)
-        {
-            printf("%s\n", "Unsupported answer.");
-        }
-    }
+    printf("sizeof(struct link): %li.\n", sizeof(struct link));
+    printf("sizeof(struct inode): %li.\n", sizeof(struct inode));
+    printf("sizeof(struct fs_data): %li.\n", sizeof(struct fs_data));
+#endif // DEBUG
+    
+    enum STARTUP_MENU_RESULT res = startup_menu();
 
     struct fs_data filesys_data;
     void* mapped_file;
@@ -35,14 +33,13 @@ main()
     }
 
     if (mapped_file == NULL) {
-        error(0, 0, "%s", "Could not map file.");
-        return 1;
+        error(0, 0, "%s", "Could not mmap file.");
     }
     
     loop(fd, &filesys_data, mapped_file);
 
     munmap(mapped_file, 
-           sizeof(struct fs_data) + 
+           BLOCKS_INFO_SECTION_SIZE * BYTES_BLOCK_SIZE + 
            filesys_data.blocks_cnt * BYTES_BLOCK_SIZE + 
            filesys_data.inodes_cnt * sizeof(struct inode));
     close(fd);

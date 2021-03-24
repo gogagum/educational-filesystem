@@ -5,7 +5,11 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "fs.h" // structs
+#include "fs.h"
+
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 
 /*
  * Fills fs data struct from pointer
@@ -65,5 +69,12 @@ struct inode*
 get_root_inode_ptr(const struct fs_data* filesys_data,
                    void* mapped_file);
 
+
+/*
+ * Returns inode index by pointer.
+ */
+size_t get_inode_idx_by_ptr(struct inode* inode_ptr,
+                            const struct fs_data* filesys_data,
+                            const void* mapped_file);
 
 #endif  // DATA_GETTERS_H

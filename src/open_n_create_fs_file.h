@@ -15,12 +15,6 @@
 #define ceil_div(a, b) (a - 1) / b + 1
 
 /*
- * Counts file size from number of kilobytes. 
- */
-size_t
-count_fs_file_size(size_t size /*file size, KB*/);
-
-/*
  * Creates file for file filesystem simulator. 
  * If ret_ptr != NULL, return pointer to beginning of mmapped file.
  */

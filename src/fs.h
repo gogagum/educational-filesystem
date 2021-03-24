@@ -24,12 +24,12 @@ enum FILE_TYPE
  */
 struct fs_data
 {
-    uint16_t blocks_cnt;              // Number of blocks in file
-    uint16_t inodes_cnt;              // Number of inodes in file
-    uint16_t blocks_tail_beginning;   // Index of first block position which is free and after which all nodes are free.
-    uint16_t blocks_stack_beginning;  // Index of first freed block position (that contains a stack info).
-    uint16_t inodes_tail_beginning;   // Index of first inode position which is free and after which all nodes are free.
-    uint16_t inodes_stack_beginning;  // Index of first freed inode position (that contains a stack info).
+    size_t blocks_cnt;              // Number of blocks in file
+    size_t inodes_cnt;              // Number of inodes in file
+    size_t blocks_tail_beginning;   // Index of first block position which is free and after which all nodes are free.
+    size_t blocks_stack_beginning;  // Index of first freed block position (that contains a stack info).
+    size_t inodes_tail_beginning;   // Index of first inode position which is free and after which all nodes are free.
+    size_t inodes_stack_beginning;  // Index of first freed inode position (that contains a stack info).
 };
 
 /*
@@ -37,12 +37,12 @@ struct fs_data
  */
 struct __attribute__((__packed__)) inode
 {
-    uint16_t blocks[25];  // Array of addresses
+    size_t blocks[12];  // Array of addresses
     enum FILE_TYPE type;  // File type flag
     time_t last_edit;     // Moment of last edidtions
-    uint16_t size;        // Size of the file
-    uint16_t blocks_cnt;  // Number of blocks
-    uint8_t reserved;     // Don't know how to use 1 byte
+    size_t size;          // Size of the file
+    size_t blocks_cnt;    // Number of blocks
+    int32_t reserved;     // Void
 };
 
 /*

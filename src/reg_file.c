@@ -50,15 +50,30 @@ grow_file(size_t bytes_to_add,
           struct fs_data* filesys_data,
           void* mapped_file)
 {
+#ifdef DEBUG
+    printf("grow_file(%li, %p, %p, %p)\n", 
+           bytes_to_add, 
+           inode_ptr, 
+           filesys_data, 
+           mapped_file);
+#endif
     size_t curr_file_size = inode_ptr->size;
     size_t curr_blocks_cnt = inode_ptr->blocks_cnt;
     size_t blocks_to_add = 
         ceil_div(curr_file_size + bytes_to_add, BYTES_BLOCK_SIZE) - 
         curr_blocks_cnt;
-    for (size_t i = 0; i < blocks_to_add; i++)
+#ifdef DEBUG
+    printf("File size before growth: %li.\n", curr_file_size);
+    printf("File blocks count: %li.\n", curr_blocks_cnt);
+    printf("Number of blocks to alloc in grow_file: %li.\n", blocks_to_add);
+#endif
+    for (size_t i = 0; i < blocks_to_add; ++i)
     {
         inode_ptr->blocks[curr_blocks_cnt + i] = 
         idx_alloc_blk(filesys_data, mapped_file);
+#ifdef DEBUG
+        printf("Added block %li to %p,\n", inode_ptr->blocks[curr_blocks_cnt + i], inode_ptr);
+#endif
     }
     inode_ptr->size += bytes_to_add;
     inode_ptr->blocks_cnt += blocks_to_add;

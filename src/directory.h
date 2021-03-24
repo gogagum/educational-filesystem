@@ -1,8 +1,13 @@
 #ifndef DIRECTORY_H
 #define DIRECTORY_H
 
+#ifdef DEBUG
+#include <stdio.h>
+#endif
+
 #include <string.h>
 #include <stddef.h>
+#include "reg_file.h"
 // #include "fs.h"
 #include "data_getters.h"
 #include "alloc.h"
@@ -53,7 +58,7 @@ find_inode_ptr_by_name(char* path_tail,
  */
 size_t
 find_inode_idx_by_name(const char* path_tail,
-                       struct inode* dir_inode_ptr,
+                       struct inode* dir_inode_idx,
                        const struct fs_data* filesys_data,
                        const void* mapped_file);
 
@@ -81,7 +86,7 @@ void
 set_dir_links_cnt(size_t links_cnt,
                   struct inode* dir_inode_ptr,
                   const struct fs_data* filesys_data,
-                  const void* mapped_file);
+                  void* mapped_file);
 
 /*
  *  Creates directory inode with standart links.

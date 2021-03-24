@@ -30,8 +30,6 @@ startup_menu()
         case '2':
             return CREATE;
     }
-
-    return STARTUP_MENU_ERROR;
 }
 
 //----------------------------------------------------------------------------//
@@ -44,12 +42,10 @@ open_menu(int* ret_fd,
 
     if (get_path_from_user(&filename, &n) != -1)
     {
-        void* mapper_file = open_fs_file(ret_fd, filename);
+        void* mapped_file = open_fs_file(ret_fd, filename);
         free(filename);
-        return open_fs_file(ret_fd, filename);
+        return mapped_file;
     }
-
-    free(filename);
     return NULL;
 }
 
@@ -73,10 +69,24 @@ create_menu(int* ret_fd,
         scanf("%lx", &blocks_cnt);
         getchar();
 
-        return create_fs_file(ret_fd, filename, inodes_cnt, blocks_cnt);
-    }
+#ifdef DEBUG
+        printf("Inodes cnt: %li.\n", inodes_cnt);
+        printf("Blocks cnt: %li.\n", blocks_cnt);
+#endif
 
-    free(filename);
+        void* mapped_file = 
+            create_fs_file(ret_fd, filename, inodes_cnt, blocks_cnt);
+
+        get_filesys_data(filesys_data, mapped_file);
+
+        create_dir_inode(0, 
+                         ""/*No matter what the name is*/, 
+                         filesys_data, 
+                         mapped_file);
+
+        free(filename);
+        return mapped_file;
+    }
     return NULL;
 }
 
@@ -88,10 +98,13 @@ loop(int fd,
 {
     enum OPERATION_MENU_RESULT curr_cmd = OPERATION_MENU_ERROR;
 
-    size_t curr_dir_inode = 0;  // start from /
-
     while (curr_cmd != EXIT)
     {
+#ifdef DEBUG
+        printf("%s", "Filesys data:");
+        printf("fs_data->blocks_tail_beginning =  %li\n", filesys_data->blocks_tail_beginning);
+        printf("fs_data->inodes_tail_beginning =  %li\n", filesys_data->inodes_tail_beginning);
+#endif
         curr_cmd = command_choosing_menu();
 
         switch(curr_cmd) 
@@ -110,7 +123,9 @@ loop(int fd,
                 break;
             case RM:
                 rm_cmd(filesys_data, mapped_file);
-            case EXIT: return;
+                break;
+            case EXIT: 
+                return;
         }
     }
 }
@@ -133,6 +148,10 @@ command_choosing_menu()
     char c;
     int input_res = scanf("%c", &c);
     getchar();
+
+#ifdef DEBUG
+    printf("Got command: %c.\n", c);
+#endif
 
     if (input_res != 1)
     {
@@ -163,15 +182,29 @@ ssize_t
 get_path_from_user(char** ret_path, 
                    size_t* n)
 {
+    ssize_t res;
     do {
         printf("%s\n", "Print file location.");
-        ssize_t res = getline(ret_path, n, stdin);
+        res = getline(ret_path, n, stdin);
         if ((*ret_path)[0] != '/')
         {
             printf("Current location is not stored, print full path.\n");
         }
     } 
     while ((*ret_path)[0] != '/');
+
+    res--;                    // Let res be the same as string length now.
+    (*ret_path)[res] = '\0';  // After getline(...), string finishes with '\n'.
+
+#ifdef DEBUG
+    size_t str_len = strlen(*ret_path);
+
+    printf("Path from user: \"%s\".\n", *ret_path);
+    printf("Path string length: %li.\n", str_len);
+    printf("res: %li.\n", res);
+#endif
+    
+    return res;
 }
 
 //----------------------------------------------------------------------------//
@@ -179,19 +212,20 @@ void
 read_cmd(struct fs_data* filesys_data,
          void* mapped_file)
 {
-    char* filename;
-    size_t n;
+    char* filename = NULL;
+    size_t n = 0;
     get_path_from_user(&filename, &n);
 
     struct inode* inode_ptr = 
-        find_inode_ptr_by_name(filename + 1, 
+        find_inode_ptr_by_name(filename, 
                                get_root_inode_ptr(filesys_data, mapped_file), 
                                filesys_data, 
                                mapped_file);
+    free(filename);
     size_t last_read = 1;
     off_t curr_offset = 0;
-    char buff[BYTES_BLOCK_SIZE + 1];
-    while (last_read != 0) 
+    char buff[BYTES_BLOCK_SIZE];
+    do 
     {
         last_read = get_chunk(buff, 
                               inode_ptr, 
@@ -200,9 +234,9 @@ read_cmd(struct fs_data* filesys_data,
                               filesys_data, 
                               mapped_file);
         curr_offset += last_read;
-        buff[last_read + 1] = '\0';
-        printf("%s", buff);
+        printf("%.*s", (int)last_read, buff);
     }
+    while (last_read != 0);
 }
 
 //----------------------------------------------------------------------------//
@@ -210,8 +244,8 @@ void
 write_cmd(struct fs_data* filesys_data,
           void* mapped_file)
 {
-    char* filename;
-    size_t n;
+    char* filename = NULL;
+    size_t n = 0;
     get_path_from_user(&filename, &n);
 
     struct inode* inode_ptr =  
@@ -219,6 +253,7 @@ write_cmd(struct fs_data* filesys_data,
                                get_root_inode_ptr(filesys_data, mapped_file), 
                                filesys_data, 
                                mapped_file);
+    free(filename);
     char* str_to_write;
     printf("%s\n", "Print a string to append into file.");
     getline(&str_to_write, &n, stdin);
@@ -249,19 +284,20 @@ void
 makedir_cmd(struct fs_data* filesys_data, 
             void* mapped_file)
 {
-    char* creation_path;
-    size_t path_length;
+    char* creation_path = NULL;
+    size_t path_length = 0;
     get_path_from_user(&creation_path, &path_length);
 
-    char* filename;
-    size_t file_name_length;
+    char* filename = NULL;
+    size_t file_name_length = 0;
+    printf("%s\n", "Print new directory name.");
     getline(&filename, &file_name_length, stdin);
 
-    struct inode* root_inode_ptr = get_inode_ptr(0, filesys_data, mapped_file);
-    inode_idx_t to_create_inode_idx = find_inode_idx_by_name(creation_path, 
-                                                             root_inode_ptr, 
-                                                             filesys_data, 
-                                                             mapped_file);
+    inode_idx_t to_create_inode_idx = 
+        find_inode_idx_by_name(creation_path, 
+                               get_root_inode_ptr(filesys_data, mapped_file),
+                               filesys_data, 
+                               mapped_file);
     create_dir_inode(to_create_inode_idx, filename, filesys_data, mapped_file);
 }
 
@@ -270,15 +306,15 @@ void
 ls_cmd(struct fs_data* filesys_data,
        void* mapped_file)
 {
-    char* path;
-    size_t path_length;
+    char* path = NULL;
+    size_t path_length = 0;
     get_path_from_user(&path, &path_length);
     
-    size_t inode_idx = find_inode_idx_by_name(path, 
-                                              get_root_inode_ptr(filesys_data, 
-                                                                 mapped_file), 
-                                              filesys_data, 
-                                              mapped_file);
+    size_t inode_idx = 
+        find_inode_idx_by_name(path, 
+                               get_root_inode_ptr(filesys_data, mapped_file), 
+                               filesys_data, 
+                               mapped_file);
     
     struct inode* inode_ptr = get_inode_ptr(inode_idx, 
                                             filesys_data, 
@@ -287,6 +323,12 @@ ls_cmd(struct fs_data* filesys_data,
 
     struct link ith_internal_file_link;
     size_t links_cnt = get_dir_links_cnt(inode_ptr, filesys_data, mapped_file);
+
+#ifdef DEBUG
+    printf("LS worked at inode with idx %li.\n", inode_idx);
+    printf("Links cnt: %li. \n", links_cnt);
+#endif
+
 
     for (size_t i = 0; i < links_cnt; ++i)
     {

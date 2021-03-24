@@ -14,8 +14,14 @@ get_inode_ptr(size_t inode_idx,
               const struct fs_data* filesys_data,
               void* mapped_file)
 {
-    assert(inode_idx <= filesys_data->inodes_cnt);
-    return mapped_file + sizeof(struct fs_data) 
+#ifdef DEBUG
+    printf("get_inode_ptr(%li, %p, %p)\n", 
+           inode_idx, 
+           filesys_data, 
+           mapped_file);
+#endif
+    assert(inode_idx < filesys_data->inodes_cnt);
+    return mapped_file + BLOCKS_INFO_SECTION_SIZE * BYTES_BLOCK_SIZE +
                        + inode_idx * sizeof(struct inode);
 }
 
@@ -38,8 +44,9 @@ get_block_ptr(size_t block_idx,
               void* mapped_file)
 {
     assert(block_idx <= filesys_data->blocks_cnt);
-    return mapped_file + BLOCKS_INFO_SECTION_SIZE * BLOCK_SIZE * 1024 + 
-           filesys_data->inodes_cnt * sizeof(struct inode);
+    return mapped_file + BLOCKS_INFO_SECTION_SIZE * BYTES_BLOCK_SIZE + 
+           filesys_data->inodes_cnt * sizeof(struct inode) + 
+           BYTES_BLOCK_SIZE * block_idx;
 }
 
 
@@ -62,10 +69,16 @@ get_ptr(const struct inode* inode_ptr,
         const struct fs_data* filesys_data,
         void* mapped_file)
 {
-    assert(offset >= inode_ptr->size);
-    size_t inturnal_block_idx = offset / BYTES_BLOCK_SIZE;
+    assert(offset <= inode_ptr->size);
+    size_t inturnal_blk_idx = offset / BYTES_BLOCK_SIZE;
     size_t inblock_offset = offset % BYTES_BLOCK_SIZE;
-    return get_block_ptr(inturnal_block_idx, filesys_data, mapped_file) + 
+#ifdef DEBUG
+    printf("inturnal_block_idx %li:\n", inturnal_blk_idx);
+    printf("inblock_offset %li:\n", inblock_offset);
+#endif
+    return get_block_ptr(inode_ptr->blocks[inturnal_blk_idx], 
+                         filesys_data, 
+                         mapped_file) + 
            inblock_offset;
 }
 
@@ -75,4 +88,15 @@ get_root_inode_ptr(const struct fs_data* filesys_data,
                    void* mapped_file)
 {
     return get_inode_ptr(0, filesys_data, mapped_file);
+}
+
+//----------------------------------------------------------------------------//
+size_t get_inode_idx_by_ptr(struct inode* inode_ptr,
+                            const struct fs_data* filesys_data,
+                            const void* mapped_file)
+{
+    struct inode* first_inode_ptr = 
+        get_inode_ptr(0, filesys_data, (void*)mapped_file);
+    assert(((void*)inode_ptr - (void*)first_inode_ptr) % sizeof(struct inode) == 0);
+    return (((void*)inode_ptr - (void*)first_inode_ptr) / sizeof(struct inode));
 }
