@@ -32,15 +32,25 @@ set_chunk(void* buff,
           const struct fs_data* filesys_data,
           void* mapped_file)
 {
+#ifdef DEBUG
+    printf("set_chunk(%p, %p, %li, %li, %p, %p)\n", 
+           buff, 
+           inode_ptr, 
+           write_limit, 
+           curr_offset, 
+           filesys_data, 
+           mapped_file);
+#endif
     void* inblock_ptr = get_ptr(inode_ptr, 
                                 curr_offset, 
                                 filesys_data, 
                                 mapped_file);
     size_t blk_idx = ceil_div(curr_offset, BYTES_BLOCK_SIZE);
-    size_t to_the_end_of_block = blk_idx * BYTES_BLOCK_SIZE - curr_offset;
+    size_t to_the_end_of_block = (blk_idx + 1) * BYTES_BLOCK_SIZE - curr_offset;
     size_t to_write = 
         (to_the_end_of_block < write_limit) ? to_the_end_of_block : write_limit;
     memcpy(inblock_ptr, buff, to_write);
+    return to_write;
 }
 
 //----------------------------------------------------------------------------//

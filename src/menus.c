@@ -212,18 +212,22 @@ read_cmd(struct fs_data* filesys_data,
     size_t last_read = 1;
     off_t curr_offset = 0;
     char buff[BYTES_BLOCK_SIZE];
+
+    size_t to_read = inode_ptr->size;
+
     do 
     {
         last_read = get_chunk(buff, 
                               inode_ptr, 
-                              BYTES_BLOCK_SIZE, 
+                              to_read, 
                               curr_offset, 
                               filesys_data, 
                               mapped_file);
         curr_offset += last_read;
+        to_read -= last_read;
         printf("%.*s", (int)last_read, buff);
     }
-    while (last_read != 0);
+    while (to_read != 0);
 }
 
 //----------------------------------------------------------------------------//
@@ -241,11 +245,10 @@ write_cmd(struct fs_data* filesys_data,
                                filesys_data, 
                                mapped_file);
     free(filename);
-    char* str_to_write;
+    char* str_to_write = NULL;
+    n = 0;
     printf("%s\n", "Print a string to append into file.");
-    getline(&str_to_write, &n, stdin);
-
-    size_t chars_to_write = n;
+    ssize_t chars_to_write = getline(&str_to_write, &n, stdin);
 
     size_t curr_offset = inode_ptr->size;
     grow_file(chars_to_write, inode_ptr, filesys_data, mapped_file);
@@ -254,16 +257,19 @@ write_cmd(struct fs_data* filesys_data,
 
     do
     {
-        last_written = set_chunk(str_to_write, 
+        last_written = set_chunk(str_to_write + curr_offset, 
                                  inode_ptr, 
-                                 BYTES_BLOCK_SIZE, 
+                                 chars_to_write, 
                                  curr_offset, 
                                  filesys_data, 
                                  mapped_file);
+#ifdef DEBUG
+        printf("last_written: %li.\n", last_written);
+#endif
         chars_to_write -= last_written;
         curr_offset += last_written;
     }
-    while (last_written);
+    while (chars_to_write);
 }
 
 //----------------------------------------------------------------------------//

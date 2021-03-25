@@ -7,9 +7,9 @@
 #define INODES_SECTION_SIZE 4096   // 2 megabytes for inodes
 #define BLOCKS_INFO_SECTION_SIZE 1 // 1 KB for free inodes, free blocks 
                                    // and file size info
+                                   
 #define BLOCK_SIZE 4               // block has a size of 4 KB
 #define BYTES_BLOCK_SIZE 4096      // block size in bytes
-#define MAX_BLOCKS_CNT 65536       // max number of blocks
 
 typedef size_t inode_idx_t;
 

@@ -73,7 +73,6 @@ find_inturnal_inode_ptr_by_name(char* inturnal_file_name,
                                                                i, 
                                                                filesys_data, 
                                                                mapped_file);
-        printf("link_ptr->name = \"%s\"\n", link_ptr->name);
         if (!strcmp(inturnal_file_name, link_ptr->name))
         {
             ret_inode_ptr = get_inode_ptr(link_ptr->inode_idx, 
