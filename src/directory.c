@@ -15,6 +15,10 @@ get_ith_internal_file_link_ptr(struct inode* dir_inode_ptr,
     printf("Got inturnal_ind: %li.\n", inturnal_idx);
 #endif
     assert(dir_inode_ptr->type == DIR);
+#ifdef DEBUG
+    printf("inturnal_idx: %li.\n", inturnal_idx);
+    printf("dir_inode_ptr->size: %li.\n", dir_inode_ptr->size);
+#endif
     assert((inturnal_idx + 1) * sizeof(struct link) < 
            dir_inode_ptr->size);
     return get_ptr(dir_inode_ptr,
@@ -42,11 +46,19 @@ get_ith_internal_file_link(struct link* ret_link,
 
 //----------------------------------------------------------------------------//
 struct inode*
-find_inturnal_inode_ptr_by_name(char* internal_file_name,
+find_inturnal_inode_ptr_by_name(char* inturnal_file_name,
                                 struct inode* dir_inode_ptr,
                                 const struct fs_data* filesys_data, 
                                 const void* mapped_file)
 {
+#ifdef DEBUG
+    printf("find_inturnal_inode_ptr_by_name(\"%s\", %p, %p, %p) \n", 
+           inturnal_file_name, 
+           dir_inode_ptr, 
+           filesys_data, 
+           mapped_file);
+#endif
+
     if (dir_inode_ptr->type != DIR)
     {
         return NULL;
@@ -61,7 +73,8 @@ find_inturnal_inode_ptr_by_name(char* internal_file_name,
                                                                i, 
                                                                filesys_data, 
                                                                mapped_file);
-        if (strcmp(internal_file_name, link_ptr->name))
+        printf("link_ptr->name = \"%s\"\n", link_ptr->name);
+        if (!strcmp(inturnal_file_name, link_ptr->name))
         {
             ret_inode_ptr = get_inode_ptr(link_ptr->inode_idx, 
                                           filesys_data, 
@@ -95,13 +108,7 @@ find_inode_idx_by_name(const char* path_tail,
                        const struct fs_data* filesys_data,
                        const void* mapped_file)
 {
-#ifdef DEBUG
-    printf("Got path tail (before cut): \"%s\".\n", path_tail);
-#endif
     path_tail += 1;
-#ifdef DEBUG
-    printf("Got path tail (after cut): \"%s\".\n", path_tail);
-#endif
 
     if (path_tail[0] == '\0')
     {   // No need to move. Path finishes with '/'
@@ -111,8 +118,8 @@ find_inode_idx_by_name(const char* path_tail,
         return get_inode_idx_by_ptr(dir_inode_ptr, filesys_data, mapped_file);
     }
 
-    char c = '/';
-    char* end_of_path_step = strstr(path_tail, &c);
+    char c[] = "/\0";
+    char* end_of_path_step = strstr(path_tail, c);
 
     off_t path_step_len;
 
@@ -139,6 +146,12 @@ find_inode_idx_by_name(const char* path_tail,
                                         dir_inode_ptr, 
                                         filesys_data, 
                                         mapped_file);
+
+#ifdef DEBUG
+    printf("next_inode_ptr: %p.\n", next_step_inode_ptr);
+    printf("next_inode_bytes_position: %li.\n", 
+           (void*)next_step_inode_ptr - mapped_file);
+#endif
 
     if (next_step_inode_ptr == NULL)
     {   // Failed.
@@ -209,7 +222,6 @@ set_dir_links_cnt(size_t links_cnt,
     printf("Inode index: %li.\n", 
            get_inode_idx_by_ptr(dir_inode_ptr, filesys_data, mapped_file));
 #endif
-    printf("hoho\n");
     size_t* cnt_ptr = get_ptr(dir_inode_ptr, 0, filesys_data, (void*)mapped_file);
     *cnt_ptr = links_cnt;
 #ifdef DEBUG
@@ -226,37 +238,26 @@ create_dir_inode(inode_idx_t parent_inode_idx,
                  struct fs_data* filesys_data,
                  void* mapped_file)
 {
-#ifdef DEBUG
-    printf("create_dir_inode(%li, %p, %p, %p)\n", 
-           parent_inode_idx, 
-           filename, 
-           filesys_data, 
-           mapped_file);
-#endif
-
     inode_idx_t created_inode_idx = idx_alloc_inode(filesys_data, mapped_file);
+
+    struct inode default_dir_inode =
+    {
+        .type = DIR,  // File type flag
+        .size = 0,          // Size of the file
+        .blocks_cnt = 0
+    };
+
     struct inode* created_inode_ptr = 
         get_inode_ptr(created_inode_idx, filesys_data, mapped_file);
-#ifdef DEBUG
-    printf("Created inode index: %li.\n", created_inode_idx);
-    printf("Created inode ptr: %p.\n", created_inode_ptr);
-    printf("Created inode position: %li.\n", (void*)created_inode_ptr - mapped_file);
-#endif    
+ 
+    set_inode(created_inode_idx, filesys_data, mapped_file, &default_dir_inode);
+
     if (created_inode_idx != 0) 
     {
-
-#ifdef DEBUG
-        printf("%s\n", "Add link to parent.");
-#endif  
-
         struct inode* parent_inode_ptr = 
             get_inode_ptr(parent_inode_idx, filesys_data, mapped_file);
         size_t curr_parent_dir_links_cnt = 
             get_dir_links_cnt(parent_inode_ptr, filesys_data, mapped_file);
-        
-#ifdef DEBUG
-        printf("Parent links cnt: %li\n", curr_parent_dir_links_cnt);
-#endif
 
         struct link in_parent_link = {.inode_idx = created_inode_idx};
         strcpy((void*)&in_parent_link.name, filename);
@@ -280,10 +281,6 @@ create_dir_inode(inode_idx_t parent_inode_idx,
               created_inode_ptr, 
               filesys_data, 
               mapped_file);
-
-#ifdef DEBUG
-    printf("DIR file size after growth: %li.\n", created_inode_ptr->size);
-#endif
 
     struct link loop_link = {.inode_idx = created_inode_idx, .name = ".\0"};
     struct link parent_link = {.inode_idx = parent_inode_idx, .name = "..\0"};

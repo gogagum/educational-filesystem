@@ -14,12 +14,6 @@ get_inode_ptr(size_t inode_idx,
               const struct fs_data* filesys_data,
               void* mapped_file)
 {
-#ifdef DEBUG
-    printf("get_inode_ptr(%li, %p, %p)\n", 
-           inode_idx, 
-           filesys_data, 
-           mapped_file);
-#endif
     assert(inode_idx < filesys_data->inodes_cnt);
     return mapped_file + BLOCKS_INFO_SECTION_SIZE * BYTES_BLOCK_SIZE +
                        + inode_idx * sizeof(struct inode);
@@ -43,7 +37,12 @@ get_block_ptr(size_t block_idx,
               const struct fs_data* filesys_data,
               void* mapped_file)
 {
-    assert(block_idx <= filesys_data->blocks_cnt);
+#ifdef DEBUG
+    printf("block_idx: %li.\n", block_idx);
+    printf("filesys_data->blocks_cnt: %li.\n", filesys_data->blocks_cnt);
+#endif
+    assert(block_idx < filesys_data->blocks_cnt);
+
     return mapped_file + BLOCKS_INFO_SECTION_SIZE * BYTES_BLOCK_SIZE + 
            filesys_data->inodes_cnt * sizeof(struct inode) + 
            BYTES_BLOCK_SIZE * block_idx;
@@ -69,13 +68,10 @@ get_ptr(const struct inode* inode_ptr,
         const struct fs_data* filesys_data,
         void* mapped_file)
 {
-    assert(offset <= inode_ptr->size);
+    assert(offset < inode_ptr->size);
     size_t inturnal_blk_idx = offset / BYTES_BLOCK_SIZE;
+    assert(inturnal_blk_idx < 12);
     size_t inblock_offset = offset % BYTES_BLOCK_SIZE;
-#ifdef DEBUG
-    printf("inturnal_block_idx %li:\n", inturnal_blk_idx);
-    printf("inblock_offset %li:\n", inblock_offset);
-#endif
     return get_block_ptr(inode_ptr->blocks[inturnal_blk_idx], 
                          filesys_data, 
                          mapped_file) + 
@@ -97,6 +93,7 @@ size_t get_inode_idx_by_ptr(struct inode* inode_ptr,
 {
     struct inode* first_inode_ptr = 
         get_inode_ptr(0, filesys_data, (void*)mapped_file);
-    assert(((void*)inode_ptr - (void*)first_inode_ptr) % sizeof(struct inode) == 0);
+    assert(((void*)inode_ptr - (void*)first_inode_ptr) % 
+           sizeof(struct inode) == 0);
     return (((void*)inode_ptr - (void*)first_inode_ptr) / sizeof(struct inode));
 }

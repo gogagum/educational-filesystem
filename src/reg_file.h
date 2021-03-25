@@ -3,9 +3,12 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <stdbool.h>
 #include "fs.h"
 #include "alloc.h"
 #include "data_getters.h"
+#include "data_setters.h"
+#include "directory.h"
 
 /*
  * Writes up to read_limit to buffer from file
@@ -33,7 +36,7 @@ set_chunk(void* buff,
 /*
  * Make file bigger. 'inode_ptr' mast be a pointer to an inode in mapped file. 
  */
-void
+int
 grow_file(size_t bytes_to_add,
           struct inode* inode_ptr,
           struct fs_data* filesys_data,
@@ -46,5 +49,14 @@ void
 delete_file(size_t inode_idx,
             struct fs_data* filesys_data,
             void* mapped_file);
+
+/*
+ * Creates inode with empty file.
+ */
+void
+create_reg_inode(char* filename,
+                 inode_idx_t parent_inode_idx,
+                 struct fs_data* filesys_data,
+                 void* mapped_file);
 
 #endif  // REG_FILE_H

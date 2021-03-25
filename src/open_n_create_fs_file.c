@@ -1,6 +1,5 @@
 #include "open_n_create_fs_file.h"
 
-
 //----------------------------------------------------------------------------//
 void*
 create_fs_file(int* ret_fd,
@@ -8,18 +7,11 @@ create_fs_file(int* ret_fd,
                size_t inodes_cnt,
                size_t blocks_cnt)
 {
-#ifdef DEBUG
-    printf("create_fs_file(%p, %p, %li, %li)\n", 
-           ret_fd, 
-           path, 
-           inodes_cnt, 
-           blocks_cnt);
-#endif
     int fd = open(path, O_RDWR | O_CREAT);
 
     if (fd == -1) 
-    {
-        error(0, 0, "%s", "Can not open file.");
+    {    
+        return NULL;
     }
 
     size_t file_size = BLOCKS_INFO_SECTION_SIZE * BYTES_BLOCK_SIZE + 

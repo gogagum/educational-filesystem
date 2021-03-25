@@ -5,18 +5,9 @@ size_t
 idx_alloc_blk(struct fs_data* filesys_data,
               void* mapped_file)
 {
-#ifdef DEBUG
-    printf("idx_alloc_blk(%p, %p)\n", filesys_data, mapped_file);
-    printf("Block tail beginning: %li.\n", 
-           filesys_data->blocks_tail_beginning);
-#endif
     size_t last_freed_block_idx = filesys_data->blocks_stack_beginning;
     if (last_freed_block_idx < filesys_data->blocks_cnt)
     {
-#ifdef DEBUG
-        printf("%s\n", "Create block in stack.");
-        printf("Block index: %li.\n", last_freed_block_idx);    
-#endif
         void* block_ptr = 
             get_block_ptr(last_freed_block_idx, filesys_data, mapped_file);
         size_t pre_last_freed_blk_idx = *(size_t*)block_ptr;
@@ -28,21 +19,16 @@ idx_alloc_blk(struct fs_data* filesys_data,
     {
         size_t blk_idx = filesys_data->blocks_tail_beginning;
 #ifdef DEBUG
-        printf("%s\n", "Create block in the end.");
-        printf("Block index: %li.\n", blk_idx);
-        printf("Block bytes position: %li.\n", (void*)get_block_ptr(blk_idx, filesys_data, mapped_file) - mapped_file);    
+        printf("blk_idx: %li.\n", blk_idx);
 #endif
         filesys_data->blocks_tail_beginning = blk_idx + 1;
-#ifdef DEBUG
-        printf("New block tail beginning: %li.\n", 
-               filesys_data->blocks_tail_beginning);
-#endif
-        if (blk_idx <= filesys_data->blocks_cnt)
+        if (blk_idx < filesys_data->blocks_cnt)
         {
             return blk_idx;
         }
     }
     
+    // Unable to allocate because ran out of memory.
     return filesys_data->blocks_cnt;
 }
 

@@ -18,7 +18,8 @@ enum OPERATION_MENU_RESULT
 {
     READ,
     WRITE,
-    MKDIR, 
+    MKDIR,
+    TOUCH, 
     LS,
     RM,
     EXIT,
@@ -38,7 +39,8 @@ startup_menu();
  */
 ssize_t
 get_path_from_user(char** ret_path, 
-                   size_t* n);
+                   size_t* n, 
+                   char* message_str);
 
 /*
  * Gets from user file name to open file.
@@ -86,11 +88,18 @@ write_cmd(struct fs_data* filesys_data,
           void* mapped_file);
 
 /*
- * Gets filename and string from user and creates file.
+ * Gets filename and file name from user and creates file.
  */
 void
 makedir_cmd(struct fs_data* filesys_data, 
             void* mapped_file);
+
+/*
+ * Gets filename and file name from user and creates file.
+ */
+void
+touch_menu(struct fs_data* filesys_data,
+           void* mapped_file);
 
 /*
  * Gets dir name from user and prints ls.
