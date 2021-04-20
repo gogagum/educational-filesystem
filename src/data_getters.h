@@ -7,10 +7,6 @@
 #include <stdlib.h>
 #include "fs.h"
 
-#ifdef DEBUG
-#include <stdio.h>
-#endif
-
 /*
  * Fills fs data struct from pointer
  */

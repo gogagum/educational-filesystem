@@ -11,14 +11,23 @@ get_chunk(void* buff,
           const struct fs_data* filesys_data,
           void* mapped_file)
 {
+    assert(curr_offset <= inode_ptr->size);
     void* inblock_ptr = get_ptr(inode_ptr, 
-                                curr_offset, 
+                                curr_offset,
                                 filesys_data, 
                                 mapped_file);
     size_t blk_idx = ceil_div(curr_offset, BYTES_BLOCK_SIZE);
     size_t to_the_end_of_block = blk_idx * BYTES_BLOCK_SIZE - curr_offset;
-    size_t to_read = 
-        (to_the_end_of_block < read_limit) ? to_the_end_of_block : read_limit;
+    size_t to_the_end_of_file = inode_ptr->size - curr_offset;
+    size_t to_read = to_the_end_of_file;
+    if (to_the_end_of_block < to_read)
+    {
+        to_read = to_the_end_of_block;
+    }
+    if (read_limit < to_the_end_of_block)
+    {
+        to_read = to_the_end_of_block;
+    }
     memcpy(buff, inblock_ptr, to_read);
     return to_read;
 }
@@ -32,15 +41,6 @@ set_chunk(void* buff,
           const struct fs_data* filesys_data,
           void* mapped_file)
 {
-#ifdef DEBUG
-    printf("set_chunk(%p, %p, %li, %li, %p, %p)\n", 
-           buff, 
-           inode_ptr, 
-           write_limit, 
-           curr_offset, 
-           filesys_data, 
-           mapped_file);
-#endif
     void* inblock_ptr = get_ptr(inode_ptr, 
                                 curr_offset, 
                                 filesys_data, 
@@ -56,27 +56,19 @@ set_chunk(void* buff,
 //----------------------------------------------------------------------------//
 int
 grow_file(size_t bytes_to_add,
-          struct inode* inode_ptr,
+          inode_idx_t inode_idx,
           struct fs_data* filesys_data,
           void* mapped_file)
 {
-#ifdef DEBUG
-    printf("grow_file(%li, %p, %p, %p)\n", 
-           bytes_to_add, 
-           inode_ptr, 
-           filesys_data, 
-           mapped_file);
-#endif
-    size_t curr_file_size = inode_ptr->size;
-    size_t curr_blocks_cnt = inode_ptr->blocks_cnt;
+    struct inode file_inode;
+
+    get_inode(&file_inode, inode_idx, filesys_data, mapped_file);
+
+
+    size_t curr_blocks_cnt = file_inode.blocks_cnt;
     size_t blocks_to_add = 
-        ceil_div(curr_file_size + bytes_to_add, BYTES_BLOCK_SIZE) - 
-        curr_blocks_cnt;
-#ifdef DEBUG
-    printf("File size before growth: %li.\n", curr_file_size);
-    printf("File blocks count: %li.\n", curr_blocks_cnt);
-    printf("Number of blocks to alloc in grow_file: %li.\n", blocks_to_add);
-#endif
+        ceil_div(file_inode.size + bytes_to_add, BYTES_BLOCK_SIZE) -
+        file_inode.blocks_cnt;
 
     size_t successfully_added_blocks_cnt = 0;
 
@@ -89,11 +81,8 @@ grow_file(size_t bytes_to_add,
         if (add)
         {
             ++successfully_added_blocks_cnt;
-            inode_ptr->blocks[curr_blocks_cnt + i] = 
-            allocated_blk_idx; 
-#ifdef DEBUG
-            printf("Allocated block with index: %li.\n", inode_ptr->blocks[curr_blocks_cnt + i]);
-#endif
+            file_inode.blocks[curr_blocks_cnt + i] =
+            allocated_blk_idx;
         }
     }
 
@@ -101,16 +90,17 @@ grow_file(size_t bytes_to_add,
     {
         for (size_t i = 0; i < successfully_added_blocks_cnt; ++i)
         {
-            free_blk(inode_ptr->blocks[curr_blocks_cnt + i], 
+            free_blk(file_inode.blocks[curr_blocks_cnt + i],
                      filesys_data, 
                      mapped_file);
         }
         return -1;
     }
-    inode_ptr->size += bytes_to_add;
-    inode_ptr->blocks_cnt += blocks_to_add;
-    return 0;
+    file_inode.size += bytes_to_add;
+    file_inode.blocks_cnt += blocks_to_add;
 
+    set_inode(inode_idx, filesys_data, mapped_file, &file_inode);
+    return 0;
 }
 
 //----------------------------------------------------------------------------//
@@ -138,16 +128,7 @@ create_reg_inode(char* filename,
                  struct fs_data* filesys_data,
                  void* mapped_file)
 {
-#ifdef DEBUG
-    printf("create_inode(%s, %p, %p)\n",  
-           filename, 
-           filesys_data, 
-           mapped_file);
-#endif
-
     inode_idx_t created_inode_idx = idx_alloc_inode(filesys_data, mapped_file);
-    struct inode* created_inode_ptr = 
-        get_inode_ptr(created_inode_idx, filesys_data, mapped_file);
 
     struct inode default_reg_inode =
     {
@@ -158,12 +139,6 @@ create_reg_inode(char* filename,
 
     set_inode(created_inode_idx, filesys_data, mapped_file, &default_reg_inode);
 
-#ifdef DEBUG
-    printf("Created inode index: %li.\n", created_inode_idx);
-    printf("Created inode ptr: %p.\n", created_inode_ptr);
-    printf("Created inode position: %li.\n", (void*)created_inode_ptr - mapped_file);
-#endif
-
     struct inode* parent_inode_ptr = 
         get_inode_ptr(parent_inode_idx, filesys_data, mapped_file);
     size_t curr_parent_dir_links_cnt = 
@@ -171,8 +146,8 @@ create_reg_inode(char* filename,
 
     struct link in_parent_link = {.inode_idx = created_inode_idx};
     strcpy((void*)&in_parent_link.name, filename);
-    grow_file(sizeof(struct link), 
-              parent_inode_ptr, 
+    grow_file(sizeof(struct link),
+              parent_inode_idx,
               filesys_data, 
               mapped_file);
     set_link(curr_parent_dir_links_cnt, 

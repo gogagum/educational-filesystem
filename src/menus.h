@@ -2,6 +2,7 @@
 #define MENUS_H
 
 #include <stdio.h>
+#include <errno.h>
 #include "open_n_create_fs_file.h"
 #include "directory.h"
 #include "reg_file.h"
@@ -10,8 +11,7 @@
 enum STARTUP_MENU_RESULT
 {
     CREATE, 
-    OPEN,
-    STARTUP_MENU_ERROR
+    OPEN
 };
 
 enum OPERATION_MENU_RESULT
@@ -43,6 +43,13 @@ get_path_from_user(char** ret_path,
                    char* message_str);
 
 /*
+ * Gets size from user
+ */
+void
+get_size_t_from_user(size_t* ret_size,
+                     const char* message_str);
+
+/*
  * Gets from user file name to open file.
  * Returns pointer to mapped_file and stats for file.
  */
@@ -63,8 +70,7 @@ create_menu(int* ret_fd,
  * Working_loop.
  */
 void
-loop(int fd, 
-     struct fs_data* filesys_data,
+loop(struct fs_data* filesys_data,
      void* mapped_file);
 
 /*

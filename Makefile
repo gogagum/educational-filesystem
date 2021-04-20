@@ -4,7 +4,7 @@ CC = gcc
 
 all:   main 
 
-debug: CCFLAGS = -DDEBUG
+debug: CCFLAGS = -DDEBUG -g -ggdb
 debug: main
 
 # Release

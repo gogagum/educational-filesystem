@@ -3,10 +3,6 @@
 
 #include "data_getters.h"
 
-#ifdef DEBUG
-#include <stdio.h>
-#endif
-
 /*
  * Returns index of a new allocated block.
  */ 

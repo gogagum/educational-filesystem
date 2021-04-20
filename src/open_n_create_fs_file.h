@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 #include <error.h>
-#include <stdio.h>  // TODO erase when finished with debug
+#include <errno.h>
 #include "fs.h"
 #include "data_setters.h"
 

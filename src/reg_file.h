@@ -34,11 +34,13 @@ set_chunk(void* buff,
           void* mapped_file);
 
 /*
- * Make file bigger. 'inode_ptr' mast be a pointer to an inode in mapped file. 
+ * Make file bigger. 'inode_ptr' mast be a pointer to an inode in mapped file.
+ * If it is impossible to grow file, returns -1 and makes no changes
+ * to filesystem.
  */
 int
 grow_file(size_t bytes_to_add,
-          struct inode* inode_ptr,
+          inode_idx_t inode_idx,
           struct fs_data* filesys_data,
           void* mapped_file);
 

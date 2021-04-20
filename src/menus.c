@@ -14,13 +14,24 @@ startup_menu()
         printf("%s\n", "# 2. Create.                                      #");
         printf("%s\n", "###################################################");
 
-        int input_res = scanf("%c", &c);
-        getchar();
-
-        if (c != '1' && c != '2') 
+        errno = 0;
+        char* buff;
+        int input_res = scanf("%m[12]", &buff);
+        if (input_res == 1)
         {
-            printf("\"%c\" is not a correct command.\n", c);
+            c = buff[0];
+            free(buff);
         }
+        else if (errno != 0)
+        {
+            perror("scanf(...) error");
+        }
+        else
+        {
+            printf("\"%s\" is not a correct command.\n", buff);
+        }
+
+        getchar();
     }
 
     switch (c)
@@ -29,6 +40,8 @@ startup_menu()
             return OPEN;
         case '2':
             return CREATE;
+        default:
+            assert(false);
     }
 }
 
@@ -40,12 +53,17 @@ open_menu(int* ret_fd,
     char* filename = NULL;
     size_t n = 0;
 
+    void* mapped_file;
+
     if (get_path_from_user(&filename, &n, "Print file location.") != -1)
     {
-        void* mapped_file = open_fs_file(ret_fd, filename);
-        get_filesys_data(filesys_data, mapped_file);
+        mapped_file = open_fs_file(ret_fd, filename);
         free(filename);
-        return mapped_file;
+        if (mapped_file != NULL)
+        {
+            get_filesys_data(filesys_data, mapped_file);
+            return mapped_file;
+        }
     }
     return NULL;
 }
@@ -62,13 +80,11 @@ create_menu(int* ret_fd,
     {
         size_t inodes_cnt;
         printf("%s\n", "Choose inodes count.");
-        scanf("%lx", &inodes_cnt);
-        getchar();
+        get_size_t_from_user(&inodes_cnt, "Invalid input. Try again.");
 
         size_t blocks_cnt;
         printf("%s\n", "Choose blocks count.");
-        scanf("%lx", &blocks_cnt);
-        getchar();
+        get_size_t_from_user(&blocks_cnt, "Invalid input. Try again.");
 
         void* mapped_file = 
             create_fs_file(ret_fd, filename, inodes_cnt, blocks_cnt);
@@ -88,8 +104,7 @@ create_menu(int* ret_fd,
 
 //----------------------------------------------------------------------------//
 void
-loop(int fd, 
-     struct fs_data* filesys_data,
+loop(struct fs_data* filesys_data,
      void* mapped_file)
 {
     enum OPERATION_MENU_RESULT curr_cmd = OPERATION_MENU_ERROR;
@@ -98,7 +113,7 @@ loop(int fd,
     {
         curr_cmd = command_choosing_menu();
 
-        switch(curr_cmd) 
+        switch (curr_cmd)
         {
             case READ:
                 read_cmd(filesys_data, mapped_file);
@@ -120,7 +135,9 @@ loop(int fd,
                 break;
             case EXIT:
                 set_filesys_data(filesys_data, mapped_file);
-                return;
+                break;
+            default:
+                assert(false);
         }
     }
 }
@@ -166,9 +183,9 @@ command_choosing_menu()
             return RM;
         case '7':
             return EXIT;
+        default:
+            assert(false);
     }
-
-    return OPERATION_MENU_ERROR;
 }
 
 //----------------------------------------------------------------------------//
@@ -195,6 +212,52 @@ get_path_from_user(char** ret_path,
 }
 
 //----------------------------------------------------------------------------//
+
+void
+get_size_t_from_user(size_t* ret_size,
+                     const char* message_str)
+{
+    errno = 0;
+    int scan_result = scanf("%zu", ret_size);
+    if (scan_result != 1)
+    {
+        if (errno != 0)
+        {
+            perror("scanf() error");
+        }
+        else
+        {
+            printf("%s\n", message_str);
+        }
+    }
+    getchar();
+}
+
+//----------------------------------------------------------------------------//
+ssize_t
+get_filename_to_remove(char** ret_path,
+                       size_t* n)
+{
+    ssize_t res;
+    bool possible_input;
+    do
+    {
+        printf("%s\n", "Print filename to remove.");
+        res = getline(ret_path, n, stdin);
+
+        possible_input =
+            (strcmp(*ret_path, UP_DIR) == 0 || strcmp(*ret_path, CURR_DIR) == 0);
+        if (!possible_input)
+        {
+            printf("%s\n", "It is impossible to remove '.' or '..'.");
+        }
+    } while (!possible_input);
+
+    --res;
+    return res;
+}
+
+//----------------------------------------------------------------------------//
 void 
 read_cmd(struct fs_data* filesys_data,
          void* mapped_file)
@@ -209,7 +272,6 @@ read_cmd(struct fs_data* filesys_data,
                                filesys_data, 
                                mapped_file);
     free(filename);
-    size_t last_read = 1;
     off_t curr_offset = 0;
     char buff[BYTES_BLOCK_SIZE];
 
@@ -217,13 +279,13 @@ read_cmd(struct fs_data* filesys_data,
 
     do 
     {
-        last_read = get_chunk(buff, 
+        size_t last_read = get_chunk(buff,
                               inode_ptr, 
                               to_read, 
                               curr_offset, 
                               filesys_data, 
                               mapped_file);
-        curr_offset += last_read;
+        curr_offset += (off_t)last_read;
         to_read -= last_read;
         printf("%.*s", (int)last_read, buff);
     }
@@ -250,7 +312,7 @@ write_cmd(struct fs_data* filesys_data,
     printf("%s\n", "Print a string to append into file.");
     ssize_t chars_to_write = getline(&str_to_write, &n, stdin);
 
-    size_t curr_offset = inode_ptr->size;
+    off_t curr_offset = (off_t)inode_ptr->size;
     grow_file(chars_to_write, inode_ptr, filesys_data, mapped_file);
 
     size_t last_written;
@@ -260,14 +322,11 @@ write_cmd(struct fs_data* filesys_data,
         last_written = set_chunk(str_to_write + curr_offset, 
                                  inode_ptr, 
                                  chars_to_write, 
-                                 curr_offset, 
+                                 curr_offset,
                                  filesys_data, 
                                  mapped_file);
-#ifdef DEBUG
-        printf("last_written: %li.\n", last_written);
-#endif
-        chars_to_write -= last_written;
-        curr_offset += last_written;
+        chars_to_write -= (off_t)last_written;
+        curr_offset += (off_t)last_written;
     }
     while (chars_to_write);
 }
@@ -342,18 +401,12 @@ ls_cmd(struct fs_data* filesys_data,
                                filesys_data, 
                                mapped_file);
     
-    struct inode* inode_ptr = get_inode_ptr(inode_idx, 
-                                            filesys_data, 
-                                            mapped_file);
+    struct inode* inode_ptr =
+        get_inode_ptr(inode_idx, filesys_data, mapped_file);
     assert(inode_ptr->type == DIR);
 
     struct link ith_internal_file_link;
     size_t links_cnt = get_dir_links_cnt(inode_ptr, filesys_data, mapped_file);
-
-#ifdef DEBUG
-    printf("LS worked at inode with idx %li.\n", inode_idx);
-    printf("Links cnt: %li. \n", links_cnt);
-#endif
 
     for (size_t i = 0; i < links_cnt; ++i)
     {
@@ -381,28 +434,21 @@ rm_cmd(
                                filesys_data, 
                                mapped_file);
 
-    printf("%s\n", "Print filename.");
-
     char* filename = NULL;
     size_t filename_length = 0;
-    ssize_t res = getline(&filename, &filename_length, stdin);
-    --res;
+    ssize_t res = get_filename_to_remove(&filename, &filename_length);
     filename[res] = '\0';
 
-    struct inode* inode_ptr = find_inturnal_inode_ptr_by_name(filename, 
-                                                              parent_inode_ptr, 
-                                                              filesys_data, 
+    struct inode* inode_ptr = find_internal_inode_ptr_by_name(filename,
+                                                              parent_inode_ptr,
+                                                              filesys_data,
                                                               mapped_file);
-
-#ifdef DEBUG
-    printf("Inode to erase: %li.\n", 
-           get_inode_idx_by_ptr(inode_ptr, filesys_data, mapped_file));
-#endif
 
     size_t parent_dir_links_cnt = get_dir_links_cnt(parent_inode_ptr, 
                                                     filesys_data, 
                                                     mapped_file);
 
+    // link to move to the freed place
     struct link* list_end_ptr = 
         get_ith_internal_file_link_ptr(parent_inode_ptr, 
                                        parent_dir_links_cnt - 1, 
@@ -413,8 +459,8 @@ rm_cmd(
     struct link* link_to_delete = 
         find_link_ptr_by_inode_idx(get_inode_idx_by_ptr(inode_ptr, 
                                                         filesys_data, 
-                                                        mapped_file), 
-                                   parent_inode_ptr, 
+                                                        mapped_file),
+                                   parent_inode_ptr,
                                    filesys_data, 
                                    mapped_file);    
 

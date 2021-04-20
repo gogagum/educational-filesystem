@@ -7,7 +7,7 @@ create_fs_file(int* ret_fd,
                size_t inodes_cnt,
                size_t blocks_cnt)
 {
-    int fd = open(path, O_RDWR | O_CREAT);
+    int fd = open(path, O_RDWR | O_CREAT, 0666);
 
     if (fd == -1) 
     {    
@@ -49,7 +49,7 @@ void*
 open_fs_file(int* ret_fd,
              char* path)
 {
-    int fd = open(path, O_RDWR);
+    int fd = open(path, O_RDWR, 0666);
 
     if (fd == -1) 
     {   // Failed while opening
@@ -61,10 +61,10 @@ open_fs_file(int* ret_fd,
 
     void* mapped_ptr = 
         mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-        
+
     if (mapped_ptr != MAP_FAILED) 
     {   // Filed at mmap
-        ret_fd = &fd;
+        *ret_fd = fd;
         return mapped_ptr;
     }
 

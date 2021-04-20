@@ -30,13 +30,15 @@ main()
     case OPEN:
         mapped_file = open_menu(&fd, &filesys_data);
         break;
+    default:
+        assert(false);
     }
 
     if (mapped_file == NULL) {
         error(0, 0, "%s", "Could not mmap file.");
     }
     
-    loop(fd, &filesys_data, mapped_file);
+    loop(&filesys_data, mapped_file);
 
     munmap(mapped_file, 
            BLOCKS_INFO_SECTION_SIZE * BYTES_BLOCK_SIZE + 

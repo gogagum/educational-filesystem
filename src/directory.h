@@ -1,23 +1,21 @@
 #ifndef DIRECTORY_H
 #define DIRECTORY_H
 
-#ifdef DEBUG
-#include <stdio.h>
-#endif
-
 #include <string.h>
 #include <stddef.h>
 #include "reg_file.h"
-// #include "fs.h"
 #include "data_getters.h"
 #include "alloc.h"
+
+const char* UP_DIR;
+const char* CURR_DIR;
 
 /*
  * Returns ith internal file/directory link pointer.
  */
 struct link*
 get_ith_internal_file_link_ptr(struct inode* dir_inode_ptr,
-                               size_t inturnal_idx,
+                               size_t internal_idx,
                                const struct fs_data* filesys_data, 
                                const void* mapped_file);
 
@@ -28,7 +26,7 @@ get_ith_internal_file_link_ptr(struct inode* dir_inode_ptr,
 void
 get_ith_internal_file_link(struct link* ret_link,
                            struct inode* dir_inode_ptr,
-                           size_t inturnal_idx,
+                           size_t internal_idx,
                            const struct fs_data* filesys_data, 
                            const void* mapped_file);
 
@@ -36,9 +34,9 @@ get_ith_internal_file_link(struct link* ret_link,
  * Search for a file by name in dir. Returns NULL if file not found.
  */
 struct inode*
-find_inturnal_inode_ptr_by_name(char* internal_file_name,
+find_internal_inode_ptr_by_name(char* internal_file_name,
                                 struct inode* dir_inode_ptr,
-                                const struct fs_data* filesys_data, 
+                                const struct fs_data* filesys_data,
                                 const void* mapped_file);
 
 /*
@@ -64,6 +62,7 @@ find_inode_idx_by_name(const char* path_tail,
 
 /*
  * Finds link in directory links list by index.
+ * Returns pointer to link or NULL if link is not found.
  */
 struct link*
 find_link_ptr_by_inode_idx(size_t inode_idx,
@@ -89,10 +88,12 @@ set_dir_links_cnt(size_t links_cnt,
                   void* mapped_file);
 
 /*
- *  Creates directory inode with standart links.
+ *  Creates directory inode with standard links.
  *  Giving parent_inode_idx == 0 will work for root inode creation.
+ *  Returns 0 if inode created successfully, -1 when impossible to
+ *  create inode.
  */
-void
+int
 create_dir_inode(inode_idx_t parent_inode_idx,
                  char* filename,
                  struct fs_data* filesys_data,
