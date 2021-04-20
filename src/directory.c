@@ -98,9 +98,7 @@ find_inode_idx_by_name(const char* path_tail,
         return get_inode_idx_by_ptr(dir_inode_ptr, filesys_data, mapped_file);
     }
 
-    char c[] = "/\0";
-    char* end_of_path_step = strstr(path_tail, c);
-
+    char* end_of_path_step = strstr(path_tail, "/\0");
     ptrdiff_t path_step_len;
 
     if (end_of_path_step == NULL)
@@ -148,7 +146,7 @@ find_link_ptr_by_inode_idx(size_t inode_idx,
 
     for (size_t i = 0; i < links_cnt; i++)
     {
-        ret_link_ptr = get_ith_internal_file_link_ptr(dir_inode_ptr, 
+        ret_link_ptr = get_ith_internal_file_link_ptr(dir_inode_ptr,
                                                       i, 
                                                       filesys_data, 
                                                       mapped_file);
@@ -211,7 +209,7 @@ create_dir_inode(inode_idx_t parent_inode_idx,
         struct link in_parent_link = {.inode_idx = created_inode_idx};
         strcpy((void*)&in_parent_link.name, filename);
         int grow_result = grow_file(sizeof(struct link),
-                                    parent_inode_ptr,
+                                    parent_inode_idx,
                                     filesys_data,
                                     mapped_file);
         if (grow_result == -1)
@@ -231,7 +229,7 @@ create_dir_inode(inode_idx_t parent_inode_idx,
 
     int grow_result = grow_file(3 * sizeof(struct link),
                                 // 2 links and 1 link cell is for size_t links count
-                                created_inode_ptr,
+                                created_inode_idx,
                                 filesys_data,
                                 mapped_file);
 

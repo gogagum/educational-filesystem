@@ -41,6 +41,7 @@ set_chunk(void* buff,
           const struct fs_data* filesys_data,
           void* mapped_file)
 {
+    assert(curr_offset < inode_ptr->size);
     void* inblock_ptr = get_ptr(inode_ptr, 
                                 curr_offset, 
                                 filesys_data, 
@@ -64,6 +65,10 @@ grow_file(size_t bytes_to_add,
 
     get_inode(&file_inode, inode_idx, filesys_data, mapped_file);
 
+    if (file_inode.size + bytes_to_add > FILE_MAX_BLOCKS_CNT * BLOCK_SIZE)
+    {
+        return -1;
+    }
 
     size_t curr_blocks_cnt = file_inode.blocks_cnt;
     size_t blocks_to_add = 

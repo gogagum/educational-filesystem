@@ -11,6 +11,8 @@
 #define BLOCK_SIZE 4               // block has a size of 4 KB
 #define BYTES_BLOCK_SIZE 4096      // block size in bytes
 
+#define FILE_MAX_BLOCKS_CNT 12
+
 typedef size_t inode_idx_t;
 
 enum FILE_TYPE
